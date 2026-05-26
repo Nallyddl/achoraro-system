@@ -36,7 +36,7 @@ export default function CartDrawer({
       onClearCart();
       setIsCheckedOut(false);
       onClose();
-    }, 3000);
+    }, 5000);
   };
 
   return (
