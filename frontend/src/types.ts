@@ -1,76 +1,45 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-export interface CPU {
+export interface Product {
   id: string;
-  name: string;
-  brand: 'Intel' | 'AMD';
-  tier: 'green' | 'yellow' | 'orange' | 'red';
-  level: number; // 1 = highest, 5 = lowest
+  title: string;
+  vendor: string;
   price: number;
-  socket: string;
-  cores: string;
-  power: number; // in Watts
-}
-
-export interface GPU {
-  id: string;
-  name: string;
-  brand: 'NVIDIA' | 'AMD';
-  tier: 'green' | 'yellow' | 'orange' | 'red';
-  level: number; // 1 = highest, 5 = lowest
-  price: number;
-  power: number; // in Watts
-  vram: string;
-}
-
-export interface Motherboard {
-  id: string;
-  name: string;
-  brand: 'Intel' | 'AMD';
-  price: number;
-  socket: string;
-  chipset: string;
-  ramType: 'DDR4' | 'DDR5';
-}
-
-export interface RAM {
-  id: string;
-  name: string;
-  price: number;
-  type: 'DDR4' | 'DDR5';
-  speed: string;
-  capacity: string;
-}
-
-export interface Storage {
-  id: string;
-  name: string;
-  price: number;
-  type: 'SSD NVMe' | 'SSD SATA' | 'HDD';
-  capacity: string;
+  compareAtPrice?: number;
+  image: string;
+  secondaryImage?: string;
+  tag?: string;
+  available: boolean;
+  score?: number;
 }
 
 export interface CartItem {
-  id: string;
-  name: string;
-  type: 'CPU' | 'GPU' | 'Placa Madre' | 'RAM' | 'Almacenamiento';
-  price: number;
+  product: Product;
+  quantity: number;
 }
 
-export interface Order {
-  orderNumber: string;
-  items: CartItem[];
-  total: number;
-  date: string;
-  customerName: string;
+export interface HardwareComponent {
+  name: string;
+  benchmarkScore: number;
+  type: "cpu" | "gpu";
+  coresThreads?: string; // For CPUs
+  tdp?: string;
+  vram?: string; // For GPUs
 }
 
-export interface GamePerformance {
+export interface SimulationResult {
+  currentCpuScore: number;
+  currentGpuScore: number;
+  targetCpuScore: number;
+  targetGpuScore: number;
+  currentFps: { [game: string]: { low: number; ultra: number } };
+  targetFps: { [game: string]: { low: number; ultra: number } };
+  performanceLiftPercent: number;
+  bottleneckAnalysis: string;
+  powerRequirementWatts: number;
+}
+
+export interface DistrictInfo {
   name: string;
-  fps1080p: number;
-  fps1440p: number;
-  fps4k: number;
+  deliveryCost: number;
+  days: string;
+  methods: string[];
 }
