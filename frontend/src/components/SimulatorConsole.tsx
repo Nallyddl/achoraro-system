@@ -1,149 +1,195 @@
-import { useState, useEffect } from "react";
-import { Cpu, Gamepad2, Zap, AlertTriangle, Sparkles, Loader2, Gauge } from "lucide-react";
+import { AlertTriangle, Cpu, Gamepad2, Gauge, Loader2, Sparkles, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 import { SimulationResult } from "../types";
 
-// Smart upgrade recommendations mapping
-const CPU_RECOMMENDATIONS: { [key: string]: string } = {
-  "AMD Ryzen 5 5600X": "AMD Ryzen 7 7800X3D",
-  "AMD Ryzen 7 5700X": "AMD Ryzen 9 7950X",
-  "AMD Ryzen 7 7800X3D": "AMD Ryzen 9 7950X",
-  "AMD Ryzen 9 7950X": "AMD Ryzen 9 7950X",
+// Datos mockeados para todos los componentes
+const CPUs = {
+  intel: [
+    { id: "i3-12100", name: "Intel Core i3-12100", socket: "LGA1700", cores: 4, price: 450, score: 12000 },
+    { id: "i5-12400F", name: "Intel Core i5-12400F", socket: "LGA1700", cores: 6, price: 699, score: 18500 },
+    { id: "i7-13700K", name: "Intel Core i7-13700K", socket: "LGA1700", cores: 16, price: 1499, score: 35000 },
+    { id: "i9-14900K", name: "Intel Core i9-14900K", socket: "LGA1700", cores: 24, price: 2299, score: 48000 },
+  ],
+  amd: [
+    { id: "r5-5600X", name: "AMD Ryzen 5 5600X", socket: "AM4", cores: 6, price: 759, score: 19500 },
+    { id: "r7-5700X", name: "AMD Ryzen 7 5700X", socket: "AM4", cores: 8, price: 999, score: 26000 },
+    { id: "r7-7800X3D", name: "AMD Ryzen 7 7800X3D", socket: "AM5", cores: 8, price: 2199, score: 42000 },
+    { id: "r9-7950X", name: "AMD Ryzen 9 7950X", socket: "AM5", cores: 16, price: 2799, score: 55000 },
+  ],
+};
+
+const GPUs = {
+  nvidia: [
+    { id: "rtx3060", name: "NVIDIA GeForce RTX 3060", vram: 12, price: 1199, score: 15000 },
+    { id: "rtx4060", name: "NVIDIA GeForce RTX 4060", vram: 8, price: 1399, score: 18000 },
+    { id: "rtx4070super", name: "NVIDIA GeForce RTX 4070 SUPER", vram: 12, price: 2499, score: 32000 },
+    { id: "rtx4080super", name: "NVIDIA GeForce RTX 4080 SUPER", vram: 16, price: 3499, score: 45000 },
+    { id: "rtx4090", name: "NVIDIA GeForce RTX 4090", vram: 24, price: 4999, score: 58000 },
+  ],
+  amd: [
+    { id: "rx6600", name: "AMD Radeon RX 6600", vram: 8, price: 999, score: 14000 },
+    { id: "rx7600", name: "AMD Radeon RX 7600", vram: 8, price: 1199, score: 16500 },
+    { id: "rx7800xt", name: "AMD Radeon RX 7800 XT", vram: 16, price: 2299, score: 31000 },
+    { id: "rx7900xtx", name: "AMD Radeon RX 7900 XTX", vram: 24, price: 3999, score: 50000 },
+  ],
+};
+
+const Motherboards = {
+  LGA1700: [
+    { id: "mb1", name: "MSI B760 Gaming Plus WiFi", chipset: "B760", price: 619, score: 5000 },
+    { id: "mb2", name: "ASUS ROG Strix Z790-E", chipset: "Z790", price: 1299, score: 8000 },
+  ],
+  AM4: [
+    { id: "mb3", name: "ASUS TUF Gaming B550-PLUS", chipset: "B550", price: 549, score: 4800 },
+    { id: "mb4", name: "MSI MPG X570S Carbon", chipset: "X570", price: 899, score: 7000 },
+  ],
+  AM5: [
+    { id: "mb5", name: "Gigabyte B650 AORUS Elite", chipset: "B650", price: 899, score: 6000 },
+    { id: "mb6", name: "ASUS ROG Strix X670E-E", chipset: "X670E", price: 1499, score: 9000 },
+  ],
+};
+
+const RAMs = {
+  DDR4: [
+    { id: "ram1", name: "Corsair Vengeance LPX 16GB DDR4-3200", capacity: 16, price: 189, score: 4000 },
+    { id: "ram2", name: "Kingston Fury Beast 32GB DDR4-3600", capacity: 32, price: 349, score: 6000 },
+  ],
+  DDR5: [
+    { id: "ram3", name: "Kingston Fury Beast 16GB DDR5-5600", capacity: 16, price: 299, score: 5500 },
+    { id: "ram4", name: "Corsair Vengeance 32GB DDR5-6000", capacity: 32, price: 549, score: 8500 },
+  ],
+};
+
+const Storages = [
+  { id: "ssd1", name: "Kingston NV3 1TB NVMe", type: "NVMe", price: 269, score: 3000 },
+  { id: "ssd2", name: "Samsung 870 EVO 1TB SATA", type: "SATA", price: 349, score: 2500 },
+  { id: "ssd3", name: "WD Black SN850X 2TB NVMe", type: "NVMe", price: 499, score: 4500 },
+];
+
+// Recomendaciones de upgrade (para CPU y GPU)
+const CPU_UPGRADE_MAP: { [key: string]: string } = {
+  "Intel Core i3-12100": "Intel Core i5-12400F",
   "Intel Core i5-12400F": "Intel Core i7-13700K",
   "Intel Core i7-13700K": "Intel Core i9-14900K",
   "Intel Core i9-14900K": "Intel Core i9-14900K",
-  "Intel Core i3-12100": "Intel Core i5-12400F",
-  "Ryzen 5 3600": "AMD Ryzen 7 5700X",
-  "Intel Core i7-7700K": "Intel Core i7-13700K"
+  "AMD Ryzen 5 5600X": "AMD Ryzen 7 7800X3D",
+  "AMD Ryzen 7 5700X": "AMD Ryzen 7 7800X3D",
+  "AMD Ryzen 7 7800X3D": "AMD Ryzen 9 7950X",
+  "AMD Ryzen 9 7950X": "AMD Ryzen 9 7950X",
 };
 
-const GPU_RECOMMENDATIONS: { [key: string]: string } = {
+const GPU_UPGRADE_MAP: { [key: string]: string } = {
   "NVIDIA GeForce RTX 3060": "NVIDIA GeForce RTX 4070 SUPER",
   "NVIDIA GeForce RTX 4060": "NVIDIA GeForce RTX 4080 SUPER",
   "NVIDIA GeForce RTX 4070 SUPER": "NVIDIA GeForce RTX 4090",
   "NVIDIA GeForce RTX 4090": "NVIDIA GeForce RTX 4090",
   "AMD Radeon RX 6600": "AMD Radeon RX 7800 XT",
-  "AMD Radeon RX 7800 XT": "NVIDIA GeForce RTX 4080 SUPER",
-  "NVIDIA GTX 1650": "NVIDIA GeForce RTX 4060",
-  "NVIDIA GeForce RTX 4080 SUPER": "NVIDIA GeForce RTX 4090",
-  "NVIDIA GTX 1060": "NVIDIA GeForce RTX 4060"
+  "AMD Radeon RX 7600": "AMD Radeon RX 7900 XTX",
+  "AMD Radeon RX 7800 XT": "AMD Radeon RX 7900 XTX",
+  "AMD Radeon RX 7900 XTX": "AMD Radeon RX 7900 XTX",
 };
 
 export default function SimulatorConsole() {
-  const [currentCpu, setCurrentCpu] = useState("AMD Ryzen 5 5600X");
-  const [currentGpu, setCurrentGpu] = useState("NVIDIA GeForce RTX 3060");
-  const [targetCpu, setTargetCpu] = useState("AMD Ryzen 7 7800X3D");
-  const [targetGpu, setTargetGpu] = useState("NVIDIA GeForce RTX 4070 SUPER");
+  // Marcas seleccionadas
+  const [cpuBrand, setCpuBrand] = useState<"intel" | "amd">("amd");
+  const [gpuBrand, setGpuBrand] = useState<"nvidia" | "amd">("nvidia");
 
-  // Custom Typed Components Support
-  const [customCpu, setCustomCpu] = useState("");
-  const [customGpu, setCustomGpu] = useState("");
-  const [useCustomCpu, setUseCustomCpu] = useState(false);
-  const [useCustomGpu, setUseCustomGpu] = useState(false);
+  // Componentes actuales (PC actual)
+  const [currentCpu, setCurrentCpu] = useState(CPUs.amd[0]);
+  const [currentGpu, setCurrentGpu] = useState(GPUs.nvidia[0]);
+  const [currentMobo, setCurrentMobo] = useState(Motherboards.AM4[0]);
+  const [currentRam, setCurrentRam] = useState(RAMs.DDR4[0]);
+  const [currentStorage, setCurrentStorage] = useState(Storages[0]);
 
-  // Auto-upgrade recommendations handler
-  const handleCurrentCpuChange = (val: string) => {
-    setCurrentCpu(val);
-    const recommended = CPU_RECOMMENDATIONS[val];
-    if (recommended) {
-      setTargetCpu(recommended);
-    }
-  };
+  // Componentes objetivo (Target)
+  const [targetCpu, setTargetCpu] = useState(CPUs.amd[2]); // 7800X3D
+  const [targetGpu, setTargetGpu] = useState(GPUs.nvidia[2]); // 4070 SUPER
+  const [targetMobo, setTargetMobo] = useState(Motherboards.AM5[0]);
+  const [targetRam, setTargetRam] = useState(RAMs.DDR5[1]);
+  const [targetStorage, setTargetStorage] = useState(Storages[2]);
 
-  const handleCurrentGpuChange = (val: string) => {
-    setCurrentGpu(val);
-    const recommended = GPU_RECOMMENDATIONS[val];
-    if (recommended) {
-      setTargetGpu(recommended);
-    }
-  };
-
-  // Real-time auto-simulation of FPS performance upgrades
-  useEffect(() => {
-    const activeCpu = useCustomCpu ? customCpu || "AMD Ryzen 5 5600X" : currentCpu;
-    const activeGpu = useCustomGpu ? customGpu || "NVIDIA GeForce RTX 3060" : currentGpu;
-
-    // Direct performance estimates trigger. Debounced if user is custom-typing
-    const isCustomActive = (useCustomCpu && customCpu) || (useCustomGpu && customGpu);
-    const delay = isCustomActive ? 500 : 50;
-
-    const timer = setTimeout(async () => {
-      setIsSimulating(true);
-      try {
-        const resCalc = await fetch("/api/simulator/calculate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            currentCpu: activeCpu,
-            currentGpu: activeGpu,
-            targetCpu: targetCpu,
-            targetGpu: targetGpu,
-          }),
-        });
-        const calcData = await resCalc.json();
-        setSimulation(calcData);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsSimulating(false);
-      }
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [currentCpu, currentGpu, targetCpu, targetGpu, useCustomCpu, useCustomGpu, customCpu, customGpu]);
-
-  // Scraped States
-  //const [scrapedData, setScrapedData] = useState<{ [key: string]: any }>({});
-  //const [isScraping, setIsScraping] = useState(false);
-
-  // Simulation state
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
-
-  // AI Diagnostic report state
   const [aiReport, setAiReport] = useState("");
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  /*const handleScrapeComponent = async (name: string, type: "cpu" | "gpu") => {
-    setIsScraping(true);
-    try {
-      const res = await fetch(`/api/simulator/passmark?name=${encodeURIComponent(name)}&type=${type}`);
-      const data = await res.json();
-      setScrapedData((prev) => ({ ...prev, [type === "cpu" ? "cpu" : "gpu"]: data }));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsScraping(false);
+  // Obtener listas filtradas por marca
+  const cpuList = CPUs[cpuBrand];
+  const gpuList = GPUs[gpuBrand];
+
+  // Cuando cambia la CPU actual, actualizar target CPU con recomendación
+  useEffect(() => {
+    const recommendedName = CPU_UPGRADE_MAP[currentCpu.name];
+    if (recommendedName) {
+      const recommended = Object.values(CPUs).flat().find(c => c.name === recommendedName);
+      if (recommended) setTargetCpu(recommended);
     }
-  };*/
+  }, [currentCpu]);
+
+  // Cuando cambia la GPU actual, actualizar target GPU
+  useEffect(() => {
+    const recommendedName = GPU_UPGRADE_MAP[currentGpu.name];
+    if (recommendedName) {
+      const recommended = Object.values(GPUs).flat().find(g => g.name === recommendedName);
+      if (recommended) setTargetGpu(recommended);
+    }
+  }, [currentGpu]);
+
+  // Cuando cambia la marca de CPU, seleccionar el primer CPU de esa marca
+  useEffect(() => {
+    setCurrentCpu(cpuList[0]);
+  }, [cpuBrand]);
+
+  // Cuando cambia la marca de GPU, seleccionar la primera GPU de esa marca
+  useEffect(() => {
+    setCurrentGpu(gpuList[0]);
+  }, [gpuBrand]);
+
+  // Simular automáticamente al cambiar cualquier componente
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleSimulate();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [currentCpu, currentGpu, currentMobo, currentRam, currentStorage, targetCpu, targetGpu, targetMobo, targetRam, targetStorage]);
 
   const handleSimulate = async () => {
     setIsSimulating(true);
-    setAiReport(""); // Clear past AI report
-    setAiError("");
-
-    const activeCpu = useCustomCpu ? customCpu || "AMD Ryzen 5 5600X" : currentCpu;
-    const activeGpu = useCustomGpu ? customGpu || "NVIDIA GeForce RTX 3060" : currentGpu;
-
     try {
-      // First scrape the components to make sure scores are up to date on client
-     // const resCpu = await fetch(`/api/simulator/passmark?name=${encodeURIComponent(activeCpu)}&type=cpu`);
-     // const resGpu = await fetch(`/api/simulator/passmark?name=${encodeURIComponent(activeGpu)}&type=gpu`);
-      //const cpuData = await resCpu.json();
-      //const gpuData = await resGpu.json();
+      // Cálculo simulado basado en scores
+      const currentTotalScore = currentCpu.score + currentGpu.score + currentMobo.score + currentRam.score + currentStorage.score;
+      const targetTotalScore = targetCpu.score + targetGpu.score + targetMobo.score + targetRam.score + targetStorage.score;
+      const performanceLift = Math.round(((targetTotalScore - currentTotalScore) / currentTotalScore) * 100);
 
-      const resCalc = await fetch("/api/simulator/calculate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentCpu: useCustomCpu ? activeCpu : currentCpu,
-          currentGpu: useCustomGpu ? activeGpu : currentGpu,
-          targetCpu: targetCpu,
-          targetGpu: targetGpu,
-        }),
-      });
-      const calcData = await resCalc.json();
-      setSimulation(calcData);
+      // Simular FPS para juegos populares
+      const baseLow = Math.floor(currentTotalScore / 200);
+      const baseUltra = Math.floor(currentTotalScore / 400);
+      const targetLow = Math.floor(targetTotalScore / 180);
+      const targetUltra = Math.floor(targetTotalScore / 350);
+
+      const simulationData: SimulationResult = {
+        currentCpuScore: currentCpu.score,
+        currentGpuScore: currentGpu.score,
+        targetCpuScore: targetCpu.score,
+        targetGpuScore: targetGpu.score,
+        currentFps: {
+          "Fortnite": { low: baseLow + 60, ultra: baseUltra + 30 },
+          "Valorant": { low: baseLow + 120, ultra: baseUltra + 80 },
+          "Cyberpunk 2077": { low: baseLow + 30, ultra: baseUltra + 15 },
+          "Call of Duty": { low: baseLow + 70, ultra: baseUltra + 40 },
+        },
+        targetFps: {
+          "Fortnite": { low: targetLow + 120, ultra: targetUltra + 80 },
+          "Valorant": { low: targetLow + 220, ultra: targetUltra + 160 },
+          "Cyberpunk 2077": { low: targetLow + 60, ultra: targetUltra + 40 },
+          "Call of Duty": { low: targetLow + 140, ultra: targetUltra + 90 },
+        },
+        performanceLiftPercent: performanceLift,
+        bottleneckAnalysis: performanceLift > 30 ? "Mejora significativa, cuello de botella reducido." : "Mejora moderada, revisa compatibilidad de RAM y almacenamiento.",
+        powerRequirementWatts: Math.round(targetTotalScore / 100) + 250,
+      };
+      setSimulation(simulationData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -156,421 +202,237 @@ export default function SimulatorConsole() {
     setIsGeneratingAi(true);
     setAiError("");
     setAiReport("");
-
-    const activeCpu = useCustomCpu ? customCpu || "AMD Ryzen 5 5600X" : currentCpu;
-    const activeGpu = useCustomGpu ? customGpu || "NVIDIA GeForce RTX 3060" : currentGpu;
-
     try {
-      const res = await fetch("/api/simulator/ai-report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentCpu: activeCpu,
-          currentGpu: activeGpu,
-          targetCpu,
-          targetGpu,
-          scores: simulation,
-          lift: simulation.performanceLiftPercent,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setAiError(data.error);
-      } else {
-        setAiReport(data.report);
-      }
+      // Simular respuesta de IA (mock)
+      await new Promise(r => setTimeout(r, 1500));
+      setAiReport(`✅ **Análisis de mejora**\n\nCon tu nueva configuración (${targetCpu.name} + ${targetGpu.name}) obtendrás un +${simulation.performanceLiftPercent}% de rendimiento general.\n\n🔧 **Recomendaciones:**\n- La placa madre ${targetMobo.name} es compatible con tu nuevo procesador.\n- La memoria RAM ${targetRam.name} mejora la velocidad de carga.\n- Considera una fuente de ${Math.ceil((simulation.powerRequirementWatts + 100) / 100) * 100}W 80 Plus Gold para mayor estabilidad.\n\n🎮 **Juegos recomendados para exprimir tu hardware:** Cyberpunk 2077 (ultra), Fortnite (competitivo), y Call of Duty (alto refresh).`);
     } catch (e) {
-      setAiError("Ocurrió un error de red al procesar el reporte de la IA.");
+      setAiError("Error generando el diagnóstico.");
     } finally {
       setIsGeneratingAi(false);
     }
   };
 
-  const popularCpus = [
-    "AMD Ryzen 5 5600X",
-    "AMD Ryzen 7 5700X",
-    "AMD Ryzen 7 7800X3D",
-    "AMD Ryzen 9 7950X",
-    "Intel Core i5-12400F",
-    "Intel Core i7-13700K",
-    "Intel Core i9-14900K",
-    "Intel Core i3-12100",
-  ];
-
-  const popularGpus = [
-    "NVIDIA GeForce RTX 3060",
-    "NVIDIA GeForce RTX 4060",
-    "NVIDIA GeForce RTX 4070 SUPER",
-    "NVIDIA GeForce RTX 4090",
-    "AMD Radeon RX 6600",
-    "AMD Radeon RX 7800 XT",
-    "NVIDIA GTX 1650",
-    "NVIDIA GeForce RTX 4080 SUPER",
-  ];
-
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-12 text-white space-y-8 select-none" id="simulator-console">
-      {/* Introduction Banner header */}
+      {/* Banner superior */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-bold uppercase text-blue-400 font-mono">
-          <Sparkles size={12} className="animate-spin text-blue-400" />
-          NUEVO MÓDULO EXCLUSIVO
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-xs font-bold uppercase text-red-400 font-mono">
+          <Sparkles size={12} className="animate-spin text-red-400" />
+          SIMULADOR DE MEJORA COMPLETO
         </div>
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase text-white">
-          Simulador de Upgrades & Performance FPS
+          Simula tu PC ideal
         </h2>
         <p className="text-gray-400 text-sm max-w-2xl mx-auto font-medium">
-          Compara las especificaciones técnicas reales extraídas de la API de **PassMark Scraper** para estimar el rendimiento global y tasas de FPS estimadas en tus setups favoritos.
+          Compara componentes: CPU, GPU, placa madre, RAM y almacenamiento. Proyectamos el rendimiento y FPS en juegos.
         </p>
       </div>
 
-      {/* Main configuration layout */}
       <div className="space-y-8">
-        {/* Hardware setup inputs */}
+        {/* Panel de configuración */}
         <div className="w-full bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
             <div className="flex items-center gap-2">
-              <Cpu className="text-blue-500" size={20} />
-              <span className="font-bold text-sm tracking-wider uppercase text-white">Configuración de Hardware</span>
+              <Cpu className="text-red-500" size={20} />
+              <span className="font-bold text-sm tracking-wider uppercase">Configuración completa</span>
             </div>
-            <div className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase font-mono flex items-center gap-1">
-              <Sparkles size={11} className="animate-pulse" />
-              Recomendación Inteligente Activa
+            <div className="flex gap-2">
+              <span className="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] px-2.5 py-1 rounded-full font-bold">Recomendación Activa</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Current PC details (Left side) */}
+          {/* Grid de dos columnas: PC Actual vs Objetivo */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* PC ACTUAL */}
             <div className="space-y-4">
-              <div className="p-1 px-3 bg-[#0A0A0B] border border-white/5 rounded-xl">
-                <span className="text-[10px] text-gray-500 font-bold uppercase font-mono">Tu PC Actual</span>
+              <div className="bg-[#0A0A0B] border border-white/5 rounded-xl p-3">
+                <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">🖥️ TU PC ACTUAL</h3>
               </div>
 
-              {/* CPU selection */}
+              {/* Marca CPU */}
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-gray-400">Procesador (CPU)</label>
-                  <button
-                    onClick={() => setUseCustomCpu(!useCustomCpu)}
-                    className="text-[10px] text-blue-400 font-bold hover:underline cursor-pointer"
-                  >
-                    {useCustomCpu ? "Usar Prefijado" : "Escribir Personalizado"}
-                  </button>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Marca de CPU</label>
+                <div className="flex gap-2">
+                  <button onClick={() => setCpuBrand("intel")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${cpuBrand === "intel" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>Intel</button>
+                  <button onClick={() => setCpuBrand("amd")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${cpuBrand === "amd" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>AMD</button>
                 </div>
-
-                {useCustomCpu ? (
-                  <input
-                    type="text"
-                    placeholder="Por ejemplo: Ryzen 5 3600"
-                    value={customCpu}
-                    onChange={(e) => setCustomCpu(e.target.value)}
-                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    id="custom-cpu-input"
-                  />
-                ) : (
-                  <select
-                    value={currentCpu}
-                    onChange={(e) => handleCurrentCpuChange(e.target.value)}
-                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
-                    id="current-cpu-select"
-                  >
-                    {popularCpus.map((cpu) => (
-                      <option key={cpu} value={cpu}>
-                        {cpu}
-                      </option>
-                    ))}
-                  </select>
-                )}
               </div>
 
-              {/* GPU selection */}
+              {/* CPU */}
               <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-bold text-gray-400">Gráfica (GPU)</label>
-                  <button
-                    onClick={() => setUseCustomGpu(!useCustomGpu)}
-                    className="text-[10px] text-blue-400 font-bold hover:underline cursor-pointer"
-                  >
-                    {useCustomGpu ? "Usar Prefijado" : "Escribir Personalizado"}
-                  </button>
-                </div>
-
-                {useCustomGpu ? (
-                  <input
-                    type="text"
-                    placeholder="Por ejemplo: NVIDIA GTX 1060"
-                    value={customGpu}
-                    onChange={(e) => setCustomGpu(e.target.value)}
-                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    id="custom-gpu-input"
-                  />
-                ) : (
-                  <select
-                    value={currentGpu}
-                    onChange={(e) => handleCurrentGpuChange(e.target.value)}
-                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
-                    id="current-gpu-select"
-                  >
-                    {popularGpus.map((gpu) => (
-                      <option key={gpu} value={gpu}>
-                        {gpu}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-
-            {/* Upgrade target / Recommended details (Right side) */}
-            <div className="space-y-4">
-              <div className="p-1 px-3 bg-[#0A0A0B] border border-white/5 rounded-xl flex items-center justify-between">
-                <span className="text-[10px] text-blue-400 font-bold uppercase font-mono">Objetivo de Upgrade (Recomendado)</span>
-                <span className="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold rounded px-1.5 font-mono">AUTO-PICK</span>
-              </div>
-
-              {/* Target CPU */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Procesador de Upgrade</label>
-                <select
-                  value={targetCpu}
-                  onChange={(e) => setTargetCpu(e.target.value)}
-                  className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
-                  id="target-cpu-select"
-                >
-                  {popularCpus.map((cpu) => (
-                    <option key={cpu} value={cpu}>
-                      {cpu}
-                    </option>
-                  ))}
+                <label className="block text-xs font-bold text-gray-400 mb-1">Procesador</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentCpu.id} onChange={(e) => setCurrentCpu(cpuList.find(c => c.id === e.target.value)!)}>
+                  {cpuList.map(cpu => <option key={cpu.id} value={cpu.id}>{cpu.name} - S/. {cpu.price}</option>)}
                 </select>
               </div>
 
-              {/* Target GPU */}
+              {/* Marca GPU */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Gráfica de Upgrade</label>
-                <select
-                  value={targetGpu}
-                  onChange={(e) => setTargetGpu(e.target.value)}
-                  className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
-                  id="target-gpu-select"
-                >
-                  {popularGpus.map((gpu) => (
-                    <option key={gpu} value={gpu}>
-                      {gpu}
-                    </option>
-                  ))}
+                <label className="block text-xs font-bold text-gray-400 mb-1">Marca de GPU</label>
+                <div className="flex gap-2">
+                  <button onClick={() => setGpuBrand("nvidia")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${gpuBrand === "nvidia" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>NVIDIA</button>
+                  <button onClick={() => setGpuBrand("amd")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${gpuBrand === "amd" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>AMD</button>
+                </div>
+              </div>
+
+              {/* GPU */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Tarjeta Gráfica</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentGpu.id} onChange={(e) => setCurrentGpu(gpuList.find(g => g.id === e.target.value)!)}>
+                  {gpuList.map(gpu => <option key={gpu.id} value={gpu.id}>{gpu.name} - S/. {gpu.price}</option>)}
+                </select>
+              </div>
+
+              {/* Placa Madre */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Placa Madre</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentMobo.id} onChange={(e) => setCurrentMobo(Object.values(Motherboards).flat().find(m => m.id === e.target.value)!)}>
+                  {Object.values(Motherboards).flat().map(mb => <option key={mb.id} value={mb.id}>{mb.name} - S/. {mb.price}</option>)}
+                </select>
+              </div>
+
+              {/* RAM */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Memoria RAM</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentRam.id} onChange={(e) => setCurrentRam(Object.values(RAMs).flat().find(r => r.id === e.target.value)!)}>
+                  {Object.values(RAMs).flat().map(ram => <option key={ram.id} value={ram.id}>{ram.name} - S/. {ram.price}</option>)}
+                </select>
+              </div>
+
+              {/* Almacenamiento */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Almacenamiento</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentStorage.id} onChange={(e) => setCurrentStorage(Storages.find(s => s.id === e.target.value)!)}>
+                  {Storages.map(ssd => <option key={ssd.id} value={ssd.id}>{ssd.name} - S/. {ssd.price}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* PC OBJETIVO (UPGRADE) */}
+            <div className="space-y-4">
+              <div className="bg-[#0A0A0B] border border-white/5 rounded-xl p-3">
+                <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">🎯 PC OBJETIVO (Upgrade recomendado)</h3>
+              </div>
+
+              {/* CPU Target */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Procesador objetivo</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetCpu.id} onChange={(e) => setTargetCpu(Object.values(CPUs).flat().find(c => c.id === e.target.value)!)}>
+                  {Object.values(CPUs).flat().map(cpu => <option key={cpu.id} value={cpu.id}>{cpu.name} - S/. {cpu.price}</option>)}
+                </select>
+              </div>
+
+              {/* GPU Target */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Tarjeta Gráfica objetivo</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetGpu.id} onChange={(e) => setTargetGpu(Object.values(GPUs).flat().find(g => g.id === e.target.value)!)}>
+                  {Object.values(GPUs).flat().map(gpu => <option key={gpu.id} value={gpu.id}>{gpu.name} - S/. {gpu.price}</option>)}
+                </select>
+              </div>
+
+              {/* Placa Madre Target */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Placa Madre objetivo</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetMobo.id} onChange={(e) => setTargetMobo(Object.values(Motherboards).flat().find(m => m.id === e.target.value)!)}>
+                  {Object.values(Motherboards).flat().map(mb => <option key={mb.id} value={mb.id}>{mb.name} - S/. {mb.price}</option>)}
+                </select>
+              </div>
+
+              {/* RAM Target */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Memoria RAM objetivo</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetRam.id} onChange={(e) => setTargetRam(Object.values(RAMs).flat().find(r => r.id === e.target.value)!)}>
+                  {Object.values(RAMs).flat().map(ram => <option key={ram.id} value={ram.id}>{ram.name} - S/. {ram.price}</option>)}
+                </select>
+              </div>
+
+              {/* Almacenamiento Target */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1">Almacenamiento objetivo</label>
+                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetStorage.id} onChange={(e) => setTargetStorage(Storages.find(s => s.id === e.target.value)!)}>
+                  {Storages.map(ssd => <option key={ssd.id} value={ssd.id}>{ssd.name} - S/. {ssd.price}</option>)}
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Action and status footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span>Simulación activa en tiempo real: Cualquier cambio de hardware recalcula tus FPS proyectados y lift síncrono al instante.</span>
-            </div>
-
-            <button
-              onClick={handleSimulate}
-              disabled={isSimulating}
-              className="w-full sm:w-auto h-11 px-6 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-600 text-[#FFF] font-bold uppercase tracking-widest text-xs rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shadow-blue-500/10"
-              id="btn-trigger-simulation"
-            >
-              {isSimulating ? (
-                <>
-                  <Loader2 className="animate-spin text-white" size={16} />
-                  Analizando...
-                </>
-              ) : (
-                <>
-                  <Gauge size={16} />
-                  Simular Manualmente
-                </>
-              )}
+          {/* Botón simular manual */}
+          <div className="flex justify-end pt-4">
+            <button onClick={handleSimulate} disabled={isSimulating} className="h-11 px-6 bg-red-600 hover:bg-red-500 disabled:bg-gray-800 text-white font-bold uppercase rounded-xl flex items-center gap-2">
+              {isSimulating ? <><Loader2 className="animate-spin" size={16} /> Simulando...</> : <><Gauge size={16} /> Simular ahora</>}
             </button>
           </div>
         </div>
 
-        {/* Live Simulator feedback */}
-        <div className="space-y-6">
-          {simulation ? (
-            <div className="bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6 animate-in fade-in duration-300 font-sans">
-              {/* Dynamic performance lift score indicator */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/5 pb-4 font-sans">
-                <div className="text-center sm:text-left">
-                  <span className="text-xs text-blue-400 font-bold uppercase tracking-wider font-mono">LIFT DE DESEMPEÑO SINTÉTICO</span>
-                  <p className="text-xs text-gray-400">Puntaje combinado (PassMark CPU & GPU Marks)</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-center bg-[#0A0A0B] border border-white/5 px-4 py-2 rounded-xl text-xs font-mono">
-                    <span className="block text-gray-500 font-bold uppercase text-[9px]">Actual</span>
-                    <span className="font-bold text-gray-200 text-sm">
-                      {(simulation.currentCpuScore + simulation.currentGpuScore).toLocaleString()} pts
-                    </span>
-                  </div>
-                  <div className="text-blue-500 font-bold">➔</div>
-                  <div className="text-center bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-xl text-xs text-blue-400 font-mono">
-                    <span className="block text-blue-500 font-bold uppercase text-[9px]">Upgrade</span>
-                    <span className="font-bold text-sm">
-                      {(simulation.targetCpuScore + simulation.targetGpuScore).toLocaleString()} pts
-                    </span>
-                  </div>
-                  <div className="bg-emerald-600 text-white font-bold text-sm px-3 py-2 rounded-xl font-mono">
-                    +{simulation.performanceLiftPercent}%
-                  </div>
-                </div>
-              </div>
-
-              {/* FPS projection in Games (Fortnite, Valorant, Cyberpunk 2077) */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-400 font-mono">
-                  <Gamepad2 size={16} />
-                  Simulación de FPS Promedio en Juegos (1080p)
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {Object.keys(simulation.currentFps).map((gameName) => {
-                    const cf = (simulation.currentFps as any)[gameName];
-                    const tf = (simulation.targetFps as any)[gameName];
-
-                    return (
-                      <div key={gameName} className="bg-[#0A0A0B] border border-white/5 rounded-2xl p-4 space-y-3">
-                        <span className="text-xs font-bold text-white block truncate">{gameName}</span>
-
-                        <div className="space-y-2">
-                          {/* Low settings progress bar comparison */}
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-[11px] text-gray-400 font-medium">
-                              <span>Gráficos Competitivos (Bajo)</span>
-                              <span className="font-mono text-xs">
-                                {cf.low} FPS <span className="text-emerald-400 font-bold">➔ {tf.low} FPS</span>
-                              </span>
-                            </div>
-                            <div className="h-2 bg-black/40 rounded-full overflow-hidden flex">
-                              <div
-                                style={{ width: `${(cf.low / 360) * 100}%` }}
-                                className="h-full bg-gray-700 rounded-l-full"
-                              ></div>
-                              <div
-                                style={{ width: `${((tf.low - cf.low) / 360) * 100}%` }}
-                                className="h-full bg-emerald-500 rounded-r-full"
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Ultra settings progress bar comparison */}
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-[11px] text-gray-400 font-medium font-sans">
-                              <span>Gráficos Ultra (Máximo)</span>
-                              <span className="font-mono text-xs">
-                                {cf.ultra} FPS <span className="text-emerald-400 font-bold">➔ {tf.ultra} FPS</span>
-                              </span>
-                            </div>
-                            <div className="h-2 bg-black/40 rounded-full overflow-hidden flex">
-                              <div
-                                style={{ width: `${(cf.ultra / 240) * 100}%` }}
-                                className="h-full bg-gray-700 rounded-l-full"
-                              ></div>
-                              <div
-                                style={{ width: `${((tf.ultra - cf.ultra) / 240) * 100}%` }}
-                                className="h-full bg-emerald-500 rounded-r-full"
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Energy recommendation and power estimates */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <div className="sm:col-span-12 md:col-span-7 bg-black/30 border border-white/5 rounded-2xl p-4 flex gap-3 items-start">
-                  <div className="p-2 rounded-xl bg-orange-650/10 border border-orange-500/20 text-orange-400">
-                    <AlertTriangle size={18} />
-                  </div>
-                  <div className="text-xs space-y-1">
-                    <span className="font-bold uppercase tracking-wider text-orange-400 block font-mono">
-                      Auditoría de Cuello de Botella
-                    </span>
-                    <p className="text-gray-300 leading-relaxed">{simulation.bottleneckAnalysis}</p>
-                  </div>
-                </div>
-
-                <div className="sm:col-span-12 md:col-span-5 bg-black/30 border border-white/5 rounded-2xl p-4 flex gap-3 items-start">
-                  <div className="p-2 rounded-xl bg-blue-550/10 border border-blue-500/25 text-blue-400 font-mono">
-                    <Zap size={18} className="animate-pulse" />
-                  </div>
-                  <div className="text-xs space-y-1">
-                    <span className="font-bold uppercase tracking-wider text-blue-400 block font-mono">
-                      Uso de Energía Recomendado
-                    </span>
-                    <p className="text-gray-300 text-[11px] leading-relaxed">
-                      TDP Estimado total: <strong>{simulation.powerRequirementWatts}W</strong>. Se aconseja una fuente certificada <strong>80 Plus de {Math.ceil((simulation.powerRequirementWatts + 150) / 100) * 100}W</strong> para óptima seguridad de tu inversión.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Expert Advisor support (Optionally invokes Gemini callback) */}
-              <div className="border-t border-white/5 pt-5 space-y-4 font-sans">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-                  <div className="text-center sm:text-left">
-                    <h5 className="font-bold text-sm flex items-center gap-1.5 justify-center sm:justify-start text-white">
-                      <Sparkles className="text-amber-400 text-sm animate-pulse" size={16} />
-                      Asistir sobre Upgrade con Gemini AI
-                    </h5>
-                    <p className="text-xs text-gray-500 font-medium">
-                      Genera un plan de bottleneck y placa madre recomendados con IA
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleGenerateAiDiagnostic}
-                    disabled={isGeneratingAi}
-                    className="h-10 bg-amber-400 hover:bg-amber-300 disabled:bg-[#0F0F12] disabled:text-gray-600 text-black font-semibold rounded-xl px-4 text-xs transition-colors flex items-center gap-1.5 shadow-lg shadow-amber-500/10 cursor-pointer"
-                    id="btn-ai-counsel"
-                  >
-                    {isGeneratingAi ? (
-                      <>
-                        <Loader2 className="animate-spin text-black" size={14} />
-                        Diagnosticando setup...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={14} />
-                        Consultar IA
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {aiError && (
-                  <div className="p-3 bg-red-900/15 border border-red-500/20 text-red-400 rounded-xl text-xs font-mono">
-                    {aiError}
-                  </div>
-                )}
-
-                {aiReport && (
-                  <div className="bg-[#0A0A0B] border border-white/10 rounded-2xl p-5 text-sm leading-relaxed text-gray-300 space-y-2 animate-in fade-in duration-300 whitespace-pre-wrap font-sans">
-                    {aiReport}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-white/5 rounded-3xl space-y-4 bg-black/10 font-sans">
-              <Gauge className="text-gray-700" size={48} />
+        {/* Resultados de simulación */}
+        {simulation && (
+          <div className="bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6 animate-in fade-in duration-300">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
               <div>
-                <h4 className="text-base font-bold text-gray-300">Monitoreo de Upgrade Inactivo</h4>
-                <p className="text-xs text-gray-500 max-w-sm mt-1 leading-normal">
-                  Ingresa las combinaciones de procesadores y tarjetas de video de arriba para proyectar automáticamente tus FPS competitivos.
-                </p>
+                <span className="text-xs text-red-400 font-bold uppercase">LIFT DE RENDIMIENTO</span>
+                <p className="text-xs text-gray-400">Puntaje combinado (todos los componentes)</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="bg-[#0A0A0B] px-4 py-2 rounded-xl text-center">
+                  <span className="block text-[9px] text-gray-500">Actual</span>
+                  <span className="font-bold text-white">{(simulation.currentCpuScore + simulation.currentGpuScore + 5000).toLocaleString()} pts</span>
+                </div>
+                <span className="text-red-500">➔</span>
+                <div className="bg-red-500/10 px-4 py-2 rounded-xl text-center">
+                  <span className="block text-[9px] text-red-400">Objetivo</span>
+                  <span className="font-bold text-white">{(simulation.targetCpuScore + simulation.targetGpuScore + 8000).toLocaleString()} pts</span>
+                </div>
+                <div className="bg-yellow-600 text-black font-bold px-3 py-2 rounded-xl">+{simulation.performanceLiftPercent}%</div>
               </div>
             </div>
-          )}
-        </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-red-400 font-mono text-xs">
+                <Gamepad2 size={16} /> FPS estimados en juegos (1080p)
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.keys(simulation.currentFps).map(game => {
+                  const cur = simulation.currentFps[game];
+                  const tar = simulation.targetFps[game];
+                  return (
+                    <div key={game} className="bg-[#0A0A0B] border border-white/5 rounded-2xl p-3">
+                      <div className="font-bold text-white text-sm mb-2">{game}</div>
+                      <div className="text-[11px] text-gray-400 flex justify-between">Bajo: {cur.low} → <span className="text-yellow-400 font-bold">{tar.low}</span></div>
+                      <div className="text-[11px] text-gray-400 flex justify-between">Ultra: {cur.ultra} → <span className="text-yellow-400 font-bold">{tar.ultra}</span></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-black/30 p-4 rounded-xl flex gap-3">
+                <AlertTriangle className="text-orange-400" size={20} />
+                <div>
+                  <span className="font-bold text-orange-400 text-xs">Cuello de botella</span>
+                  <p className="text-xs text-gray-300">{simulation.bottleneckAnalysis}</p>
+                </div>
+              </div>
+              <div className="bg-black/30 p-4 rounded-xl flex gap-3">
+                <Zap className="text-red-400" size={20} />
+                <div>
+                  <span className="font-bold text-red-400 text-xs">Requerimiento energético</span>
+                  <p className="text-xs text-gray-300">Fuente recomendada: {Math.ceil((simulation.powerRequirementWatts + 100) / 100) * 100}W 80 Plus Gold</p>
+                </div>
+              </div>
+            </div>
+
+            {/* IA */}
+            <div className="border-t pt-4">
+              <button onClick={handleGenerateAiDiagnostic} disabled={isGeneratingAi} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2">
+                <Sparkles size={14} /> {isGeneratingAi ? "Generando..." : "Consultar a la IA"}
+              </button>
+              {aiError && <div className="text-red-400 text-xs mt-2">{aiError}</div>}
+              {aiReport && <div className="bg-[#0A0A0B] p-4 rounded-xl mt-3 text-sm whitespace-pre-wrap">{aiReport}</div>}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

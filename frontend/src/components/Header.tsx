@@ -1,5 +1,5 @@
+import { ChevronDown, Facebook, Instagram, MapPin, Menu, Search, ShoppingBag, X, Youtube } from "lucide-react";
 import React, { useState } from "react";
-import { Search, MapPin, ShoppingBag, Menu, X, Instagram, Facebook, Youtube, ChevronDown } from "lucide-react";
 import { CartItem } from "../types";
 
 interface HeaderProps {
@@ -32,25 +32,39 @@ export default function Header({
   };
 
   return (
-    <header className="w-full bg-[#0A0A0B] text-white selection:bg-blue-600/30 selection:text-white" id="site-header">
+    <header className="w-full bg-[#0A0A0B] text-white selection:bg-red-600/30 selection:text-white" id="site-header">
       {/* Top Banner Announcement slider */}
-      <div className="bg-gradient-to-r from-blue-900/30 via-slate-900 to-blue-900/30 border-b border-white/5 text-gray-300 text-center py-2 px-4 text-xs font-medium tracking-wide flex items-center justify-center overflow-hidden h-9">
+      <div className="bg-gradient-to-r from-red-900/30 via-slate-900 to-red-900/30 border-b border-white/5 text-gray-300 text-center py-2 px-4 text-xs font-medium tracking-wide flex items-center justify-center overflow-hidden h-9">
         <div className="animate-pulse flex items-center gap-2 font-mono">
           <span>Hasta 12 Cuotas sin intereses en toda la tienda</span>
           <span className="opacity-40 sm:inline">•</span>
           <span className="hidden sm:inline">Envíos Gratis a provincia en compras +S/. 599</span>
           <span className="hidden sm:inline opacity-40">•</span>
-          <span className="hidden sm:inline text-blue-400">Canjee Millas y Puntos Gratis</span>
+          <span className="hidden sm:inline text-red-400">Canjee Millas y Puntos Gratis</span>
         </div>
       </div>
 
       {/* Toolbar - Links and socials */}
       <div className="hidden md:flex justify-between items-center px-6 py-2 border-b border-white/5 bg-[#0F0F12] text-xs text-gray-400">
         <div className="flex items-center gap-5 font-semibold tracking-wider font-sans">
-          <button onClick={() => setSelectedTab("products")} className="hover:text-blue-400 transition-colors cursor-pointer">Logitech</button>
-          <button onClick={() => setSelectedTab("simulator")} className="hover:text-blue-400 transition-colors cursor-pointer">Arma tu PC / Simulador</button>
-          <button onClick={() => setSelectedTab("products")} className="hover:text-blue-400 transition-colors cursor-pointer">Sim Racing</button>
-          <button onClick={() => setSelectedTab("products")} className="hover:text-blue-400 transition-colors cursor-pointer">Sillas gamer</button>
+          <button onClick={() => setSelectedTab("builder")} className="hover:text-red-400 transition-colors cursor-pointer">
+            Arma tu PC
+          </button>
+          <button onClick={() => setSelectedTab("simulator")} className="hover:text-red-400 transition-colors cursor-pointer">
+            Simulador de mejora
+          </button>
+          <button onClick={() => setSelectedTab("products")} className="hover:text-red-400 transition-colors cursor-pointer">
+            Logitech
+          </button>
+          <button onClick={() => setSelectedTab("simulator")} className="hover:text-red-400 transition-colors cursor-pointer">
+            Arma tu PC / Simulador
+          </button>
+          <button onClick={() => setSelectedTab("products")} className="hover:text-red-400 transition-colors cursor-pointer">
+            Sim Racing
+          </button>
+          <button onClick={() => setSelectedTab("products")} className="hover:text-red-400 transition-colors cursor-pointer">
+            Sillas gamer
+          </button>
         </div>
         <div className="flex items-center gap-4">
           <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors text-gray-400">
@@ -79,8 +93,8 @@ export default function Header({
         {/* Branding Logo */}
         <div className="flex items-center cursor-pointer select-none" onClick={() => setSelectedTab("home")}>
           <div className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white shadow-md shadow-blue-900/10">A</div>
-            <span className="font-extrabold text-white tracking-widest text-lg">ACHORAO <span className="text-blue-500 font-medium">GAMER</span></span>
+            <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center font-bold text-white shadow-md shadow-red-900/10">A</div>
+            <span className="font-extrabold text-white tracking-widest text-lg">ACHORAO <span className="text-red-500 font-medium">GAMER</span></span>
           </div>
         </div>
 
@@ -88,19 +102,25 @@ export default function Header({
         <nav className="hidden md:flex items-center gap-6 font-medium text-sm text-gray-400">
           <button
             onClick={() => setSelectedTab("home")}
-            className={`transition-colors py-1 cursor-pointer ${selectedTab === "home" ? "text-white border-b-2 border-blue-500 font-semibold" : "hover:text-white"}`}
+            className={`transition-colors py-1 cursor-pointer ${selectedTab === "home" ? "text-white border-b-2 border-red-500 font-semibold" : "hover:text-white"}`}
           >
             Inicio
           </button>
           <button
+            onClick={() => setSelectedTab("builder")}
+            className={`transition-colors py-1 cursor-pointer ${selectedTab === "builder" ? "text-white border-b-2 border-red-500 font-semibold" : "hover:text-white"}`}
+          >
+            Arma tu PC
+          </button>
+          <button
             onClick={() => setSelectedTab("products")}
-            className={`transition-colors py-1 cursor-pointer ${selectedTab === "products" ? "text-white border-b-2 border-blue-500 font-semibold" : "hover:text-white"}`}
+            className={`transition-colors py-1 cursor-pointer ${selectedTab === "products" ? "text-white border-b-2 border-red-500 font-semibold" : "hover:text-white"}`}
           >
             Productos
           </button>
           <button
             onClick={() => setSelectedTab("simulator")}
-            className={`transition-colors py-1 flex items-center gap-1 cursor-pointer ${selectedTab === "simulator" ? "text-blue-400 font-semibold border-b-2 border-blue-500" : "hover:text-white"}`}
+            className={`transition-colors py-1 flex items-center gap-1 cursor-pointer ${selectedTab === "simulator" ? "text-red-400 font-semibold border-b-2 border-red-500" : "hover:text-white"}`}
           >
             Simular Setup / Upgrade
           </button>
@@ -115,7 +135,7 @@ export default function Header({
               placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-black/40 text-white text-xs px-3 py-2 pr-8 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none w-36 md:w-48 transition-all"
+              className="bg-black/40 text-white text-xs px-3 py-2 pr-8 rounded-md border border-white/10 focus:border-red-500 focus:outline-none w-36 md:w-48 transition-all"
               id="header-search-input"
             />
             <button type="submit" className="absolute right-2.5 text-gray-400 hover:text-white cursor-pointer" id="btn-submit-search">
@@ -126,10 +146,10 @@ export default function Header({
           {/* District Selector button */}
           <button
             onClick={onOpenLocationModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white hover:bg-[#0F0F12] hover:border-blue-500/50 transition-all select-none cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white hover:bg-[#0F0F12] hover:border-red-500/50 transition-all select-none cursor-pointer"
             id="btn-trigger-location-header"
           >
-            <MapPin size={12} className="text-blue-500" />
+            <MapPin size={12} className="text-red-500" />
             <span className="max-w-[70px] sm:max-w-[124px] truncate">
               {currentDistrict || "Ubicación"}
             </span>
@@ -139,12 +159,12 @@ export default function Header({
           {/* Cart Bag trigger button */}
           <button
             onClick={onOpenCartDrawer}
-            className="relative p-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white transition-all cursor-pointer shadow-lg shadow-blue-900/30 hover:scale-105"
+            className="relative p-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white transition-all cursor-pointer shadow-lg shadow-red-900/30 hover:scale-105"
             id="btn-cart-trigger"
           >
             <ShoppingBag size={15} />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center animate-pulse border border-[#0F0F12] leading-none">
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center animate-pulse border border-[#0F0F12] leading-none">
                 {cartCount}
               </span>
             )}
@@ -161,7 +181,7 @@ export default function Header({
           {/* Drawer content */}
           <div className="relative w-72 bg-[#0F0F12] border-r border-white/10 h-full flex flex-col p-6 text-white space-y-6 z-10 animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <span className="text-lg font-bold uppercase text-blue-500">Menú Achorao</span>
+              <span className="text-lg font-bold uppercase text-red-500">Menú Achorao</span>
               <button onClick={() => setIsMobileMenuOpen(false)} className="cursor-pointer">
                 <X size={20} />
               </button>
@@ -173,16 +193,25 @@ export default function Header({
                   setSelectedTab("home");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`text-left py-2 cursor-pointer ${selectedTab === "home" ? "text-blue-500 font-semibold" : "text-gray-300 hover:text-white"}`}
+                className={`text-left py-2 cursor-pointer ${selectedTab === "home" ? "text-red-500 font-semibold" : "text-gray-300 hover:text-white"}`}
               >
                 Inicio
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTab("builder");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-left py-2 cursor-pointer ${selectedTab === "builder" ? "text-red-500 font-semibold" : "text-gray-300 hover:text-white"}`}
+              >
+                Arma tu PC
               </button>
               <button
                 onClick={() => {
                   setSelectedTab("products");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`text-left py-2 cursor-pointer ${selectedTab === "products" ? "text-blue-500 font-semibold" : "text-gray-300 hover:text-white"}`}
+                className={`text-left py-2 cursor-pointer ${selectedTab === "products" ? "text-red-500 font-semibold" : "text-gray-300 hover:text-white"}`}
               >
                 Productos
               </button>
@@ -191,7 +220,7 @@ export default function Header({
                   setSelectedTab("simulator");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`text-left py-2 font-black cursor-pointer ${selectedTab === "simulator" ? "text-blue-400" : "text-gray-300 hover:text-white"}`}
+                className={`text-left py-2 font-black cursor-pointer ${selectedTab === "simulator" ? "text-red-400" : "text-gray-300 hover:text-white"}`}
               >
                 Simular Setup / Upgrade
               </button>
@@ -199,7 +228,7 @@ export default function Header({
 
             <div className="pt-6 border-t border-white/10 text-xs text-gray-500 space-y-4">
               <div className="flex items-center gap-2">
-                <MapPin size={14} className="text-blue-500" />
+                <MapPin size={14} className="text-red-500" />
                 <button onClick={() => { onOpenLocationModal(); setIsMobileMenuOpen(false); }} className="hover:underline text-gray-300 cursor-pointer">
                   {currentDistrict ? `Envío en: ${currentDistrict}` : "Seleccionar Ubicación de despacho"}
                 </button>
