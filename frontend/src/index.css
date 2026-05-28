@@ -26,11 +26,30 @@
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background-color: #0A0A0B;
   color: #E4E4E7;
   font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 
 .font-display {
   font-family: var(--font-display);
+}
+
+/* Custom scrollbars for dashboard gaming theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #020202;
+}
+::-webkit-scrollbar-thumb {
+  background: #ef444433;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ef444466;
 }

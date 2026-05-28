@@ -1,5 +1,5 @@
-import  { useState, useEffect } from "react";
-import { Info, Calculator } from "lucide-react";
+import { Calculator, Info } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ProductCalculatorProps {
   basePrice: number; // S/. 339.90

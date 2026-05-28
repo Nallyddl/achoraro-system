@@ -1,6 +1,6 @@
+import { CreditCard, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import { X, Trash2, ShoppingBag, Plus, Minus, CreditCard } from "lucide-react";
-import { CartItem} from "../types";
+import { CartItem } from "../types";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -36,7 +36,7 @@ export default function CartDrawer({
       onClearCart();
       setIsCheckedOut(false);
       onClose();
-    }, 5000);
+    }, 3000);
   };
 
   return (

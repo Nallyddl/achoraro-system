@@ -1,5 +1,5 @@
+import { MapPin, X } from "lucide-react";
 import { useState } from "react";
-import { X, MapPin } from "lucide-react";
 import { DistrictInfo } from "../types";
 
 export const PERU_DISTRICTS: { [name: string]: DistrictInfo } = {

@@ -1,195 +1,271 @@
-import { AlertTriangle, Cpu, Gamepad2, Gauge, Loader2, Sparkles, Zap } from "lucide-react";
+import { AlertTriangle, Cpu, Gamepad2, Gauge, Loader2, Send, ShoppingCart, Sparkles, User, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-import { SimulationResult } from "../types";
+import { Product, SimulationResult } from "../types";
 
-// Datos mockeados para todos los componentes
-const CPUs = {
-  intel: [
-    { id: "i3-12100", name: "Intel Core i3-12100", socket: "LGA1700", cores: 4, price: 450, score: 12000 },
-    { id: "i5-12400F", name: "Intel Core i5-12400F", socket: "LGA1700", cores: 6, price: 699, score: 18500 },
-    { id: "i7-13700K", name: "Intel Core i7-13700K", socket: "LGA1700", cores: 16, price: 1499, score: 35000 },
-    { id: "i9-14900K", name: "Intel Core i9-14900K", socket: "LGA1700", cores: 24, price: 2299, score: 48000 },
-  ],
-  amd: [
-    { id: "r5-5600X", name: "AMD Ryzen 5 5600X", socket: "AM4", cores: 6, price: 759, score: 19500 },
-    { id: "r7-5700X", name: "AMD Ryzen 7 5700X", socket: "AM4", cores: 8, price: 999, score: 26000 },
-    { id: "r7-7800X3D", name: "AMD Ryzen 7 7800X3D", socket: "AM5", cores: 8, price: 2199, score: 42000 },
-    { id: "r9-7950X", name: "AMD Ryzen 9 7950X", socket: "AM5", cores: 16, price: 2799, score: 55000 },
-  ],
+// Pricing lookup mapping for standard simulator products
+const COMPONENT_PRICES: { [key: string]: number } = {
+  "AMD Ryzen 5 5600X": 720.0,
+  "AMD Ryzen 7 5700X": 950.0,
+  "AMD Ryzen 7 7800X3D": 1790.0,
+  "AMD Ryzen 9 7950X": 2790.0,
+  "Intel Core i5-12400F": 680.0,
+  "Intel Core i7-13700K": 1690.0,
+  "Intel Core i9-14900K": 2590.0,
+  "Intel Core i3-12100": 450.0,
+  "Ryzen 5 3600": 390.0,
+  "Intel Core i7-7700K": 590.0,
+  "NVIDIA GeForce RTX 3060": 1390.0,
+  "NVIDIA GeForce RTX 4060": 1590.0,
+  "NVIDIA GeForce RTX 4070 SUPER": 2990.0,
+  "NVIDIA GeForce RTX 4090": 8990.0,
+  "AMD Radeon RX 6600": 990.0,
+  "AMD Radeon RX 7800 XT": 2590.0,
+  "NVIDIA GTX 1650": 650.0,
+  "NVIDIA GeForce RTX 4080 SUPER": 4890.0,
+  "NVIDIA GTX 1060": 550.0,
+  // Placas
+  "ASUS Prime H610M DDR4": 340.0,
+  "ASUS Prime B760M-A WiFi DDR5": 620.0,
+  "MSI PRO Z790-A WiFi DDR5": 1190.0,
+  "MSI B550M PRO-VDH WiFi": 490.0,
+  "ASUS TUF Gaming A620M-PLUS (AM5)": 590.0,
+  "ASUS ROG STRIX X670E-F Gaming AM5": 1650.0,
+  // RAMs
+  "8GB (1x8GB) DDR4 2666MHz": 110.0,
+  "16GB (2x8GB) DDR4 3200MHz": 230.0,
+  "16GB (1x16GB) DDR5 5200MHz": 290.0,
+  "32GB (2x16GB) DDR5 6000MHz": 590.0,
+  "64GB (2x32GB) DDR5 6400MHz": 1190.0,
+  // Storages
+  "HDD Toshiba 1TB SATA 7200 RPM": 190.0,
+  "SSD Kingston A400 480GB SATA": 180.0,
+  "SSD Kingston NV2 1TB NVMe PCIe 4.0": 290.0,
+  "Corsair MP600 Pro 2TB NVMe PCIe 4.0": 790.0,
 };
 
-const GPUs = {
-  nvidia: [
-    { id: "rtx3060", name: "NVIDIA GeForce RTX 3060", vram: 12, price: 1199, score: 15000 },
-    { id: "rtx4060", name: "NVIDIA GeForce RTX 4060", vram: 8, price: 1399, score: 18000 },
-    { id: "rtx4070super", name: "NVIDIA GeForce RTX 4070 SUPER", vram: 12, price: 2499, score: 32000 },
-    { id: "rtx4080super", name: "NVIDIA GeForce RTX 4080 SUPER", vram: 16, price: 3499, score: 45000 },
-    { id: "rtx4090", name: "NVIDIA GeForce RTX 4090", vram: 24, price: 4999, score: 58000 },
-  ],
-  amd: [
-    { id: "rx6600", name: "AMD Radeon RX 6600", vram: 8, price: 999, score: 14000 },
-    { id: "rx7600", name: "AMD Radeon RX 7600", vram: 8, price: 1199, score: 16500 },
-    { id: "rx7800xt", name: "AMD Radeon RX 7800 XT", vram: 16, price: 2299, score: 31000 },
-    { id: "rx7900xtx", name: "AMD Radeon RX 7900 XTX", vram: 24, price: 3999, score: 50000 },
-  ],
+const COMPONENT_IMAGES: { [key: string]: string } = {
+  cpu: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
+  gpu: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?auto=format&fit=crop&w=400&q=85",
+  placa: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=85",
+  ram: "https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?auto=format&fit=crop&w=400&q=85",
+  storage: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
 };
 
-const Motherboards = {
-  LGA1700: [
-    { id: "mb1", name: "MSI B760 Gaming Plus WiFi", chipset: "B760", price: 619, score: 5000 },
-    { id: "mb2", name: "ASUS ROG Strix Z790-E", chipset: "Z790", price: 1299, score: 8000 },
-  ],
-  AM4: [
-    { id: "mb3", name: "ASUS TUF Gaming B550-PLUS", chipset: "B550", price: 549, score: 4800 },
-    { id: "mb4", name: "MSI MPG X570S Carbon", chipset: "X570", price: 899, score: 7000 },
-  ],
-  AM5: [
-    { id: "mb5", name: "Gigabyte B650 AORUS Elite", chipset: "B650", price: 899, score: 6000 },
-    { id: "mb6", name: "ASUS ROG Strix X670E-E", chipset: "X670E", price: 1499, score: 9000 },
-  ],
-};
-
-const RAMs = {
-  DDR4: [
-    { id: "ram1", name: "Corsair Vengeance LPX 16GB DDR4-3200", capacity: 16, price: 189, score: 4000 },
-    { id: "ram2", name: "Kingston Fury Beast 32GB DDR4-3600", capacity: 32, price: 349, score: 6000 },
-  ],
-  DDR5: [
-    { id: "ram3", name: "Kingston Fury Beast 16GB DDR5-5600", capacity: 16, price: 299, score: 5500 },
-    { id: "ram4", name: "Corsair Vengeance 32GB DDR5-6000", capacity: 32, price: 549, score: 8500 },
-  ],
-};
-
-const Storages = [
-  { id: "ssd1", name: "Kingston NV3 1TB NVMe", type: "NVMe", price: 269, score: 3000 },
-  { id: "ssd2", name: "Samsung 870 EVO 1TB SATA", type: "SATA", price: 349, score: 2500 },
-  { id: "ssd3", name: "WD Black SN850X 2TB NVMe", type: "NVMe", price: 499, score: 4500 },
-];
-
-// Recomendaciones de upgrade (para CPU y GPU)
-const CPU_UPGRADE_MAP: { [key: string]: string } = {
-  "Intel Core i3-12100": "Intel Core i5-12400F",
+const CPU_RECOMMENDATIONS: { [key: string]: string } = {
+  "AMD Ryzen 5 5600X": "AMD Ryzen 7 7800X3D",
+  "AMD Ryzen 7 5700X": "AMD Ryzen 9 7950X",
+  "AMD Ryzen 7 7800X3D": "AMD Ryzen 9 7950X",
+  "AMD Ryzen 9 7950X": "AMD Ryzen 9 7950X",
   "Intel Core i5-12400F": "Intel Core i7-13700K",
   "Intel Core i7-13700K": "Intel Core i9-14900K",
   "Intel Core i9-14900K": "Intel Core i9-14900K",
-  "AMD Ryzen 5 5600X": "AMD Ryzen 7 7800X3D",
-  "AMD Ryzen 7 5700X": "AMD Ryzen 7 7800X3D",
-  "AMD Ryzen 7 7800X3D": "AMD Ryzen 9 7950X",
-  "AMD Ryzen 9 7950X": "AMD Ryzen 9 7950X",
+  "Intel Core i3-12100": "Intel Core i5-12400F",
+  "Ryzen 5 3600": "AMD Ryzen 7 5700X",
+  "Intel Core i7-7700K": "Intel Core i7-13700K"
 };
 
-const GPU_UPGRADE_MAP: { [key: string]: string } = {
+const GPU_RECOMMENDATIONS: { [key: string]: string } = {
   "NVIDIA GeForce RTX 3060": "NVIDIA GeForce RTX 4070 SUPER",
   "NVIDIA GeForce RTX 4060": "NVIDIA GeForce RTX 4080 SUPER",
   "NVIDIA GeForce RTX 4070 SUPER": "NVIDIA GeForce RTX 4090",
   "NVIDIA GeForce RTX 4090": "NVIDIA GeForce RTX 4090",
   "AMD Radeon RX 6600": "AMD Radeon RX 7800 XT",
-  "AMD Radeon RX 7600": "AMD Radeon RX 7900 XTX",
-  "AMD Radeon RX 7800 XT": "AMD Radeon RX 7900 XTX",
-  "AMD Radeon RX 7900 XTX": "AMD Radeon RX 7900 XTX",
+  "AMD Radeon RX 7800 XT": "NVIDIA GeForce RTX 4080 SUPER",
+  "NVIDIA GTX 1650": "NVIDIA GeForce RTX 4060",
+  "NVIDIA GeForce RTX 4080 SUPER": "NVIDIA GeForce RTX 4090",
+  "NVIDIA GTX 1060": "NVIDIA GeForce RTX 4060"
 };
 
-export default function SimulatorConsole() {
-  // Marcas seleccionadas
-  const [cpuBrand, setCpuBrand] = useState<"intel" | "amd">("amd");
-  const [gpuBrand, setGpuBrand] = useState<"nvidia" | "amd">("nvidia");
+const PLACA_RECOMMENDATIONS: { [key: string]: string } = {
+  "ASUS Prime H610M DDR4": "ASUS Prime B760M-A WiFi DDR5",
+  "ASUS Prime B760M-A WiFi DDR5": "MSI PRO Z790-A WiFi DDR5",
+  "MSI PRO Z790-A WiFi DDR5": "MSI PRO Z790-A WiFi DDR5",
+  "MSI B550M PRO-VDH WiFi": "ASUS TUF Gaming A620M-PLUS (AM5)",
+  "ASUS TUF Gaming A620M-PLUS (AM5)": "ASUS ROG STRIX X670E-F Gaming AM5",
+  "ASUS ROG STRIX X670E-F Gaming AM5": "ASUS ROG STRIX X670E-F Gaming AM5"
+};
 
-  // Componentes actuales (PC actual)
-  const [currentCpu, setCurrentCpu] = useState(CPUs.amd[0]);
-  const [currentGpu, setCurrentGpu] = useState(GPUs.nvidia[0]);
-  const [currentMobo, setCurrentMobo] = useState(Motherboards.AM4[0]);
-  const [currentRam, setCurrentRam] = useState(RAMs.DDR4[0]);
-  const [currentStorage, setCurrentStorage] = useState(Storages[0]);
+const RAM_RECOMMENDATIONS: { [key: string]: string } = {
+  "8GB (1x8GB) DDR4 2666MHz": "16GB (2x8GB) DDR4 3200MHz",
+  "16GB (2x8GB) DDR4 3200MHz": "32GB (2x16GB) DDR5 6000MHz",
+  "16GB (1x16GB) DDR5 5200MHz": "32GB (2x16GB) DDR5 6000MHz",
+  "32GB (2x16GB) DDR5 6000MHz": "64GB (2x32GB) DDR5 6400MHz",
+  "64GB (2x32GB) DDR5 6400MHz": "64GB (2x32GB) DDR5 6400MHz"
+};
 
-  // Componentes objetivo (Target)
-  const [targetCpu, setTargetCpu] = useState(CPUs.amd[2]); // 7800X3D
-  const [targetGpu, setTargetGpu] = useState(GPUs.nvidia[2]); // 4070 SUPER
-  const [targetMobo, setTargetMobo] = useState(Motherboards.AM5[0]);
-  const [targetRam, setTargetRam] = useState(RAMs.DDR5[1]);
-  const [targetStorage, setTargetStorage] = useState(Storages[2]);
+const STORAGE_RECOMMENDATIONS: { [key: string]: string } = {
+  "HDD Toshiba 1TB SATA 7200 RPM": "SSD Kingston A400 480GB SATA",
+  "SSD Kingston A400 480GB SATA": "SSD Kingston NV2 1TB NVMe PCIe 4.0",
+  "SSD Kingston NV2 1TB NVMe PCIe 4.0": "Corsair MP600 Pro 2TB NVMe PCIe 4.0",
+  "Corsair MP600 Pro 2TB NVMe PCIe 4.0": "Corsair MP600 Pro 2TB NVMe PCIe 4.0"
+};
 
+interface SimulatorConsoleProps {
+  onAddToCart: (product: Product) => void;
+}
+
+interface Message {
+  sender: "user" | "assistant";
+  text: string;
+}
+
+export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps) {
+  const [currentCpu, setCurrentCpu] = useState("");
+  const [currentGpu, setCurrentGpu] = useState("");
+  const [currentPlaca, setCurrentPlaca] = useState("");
+  const [currentRam, setCurrentRam] = useState("");
+  const [currentStorage, setCurrentStorage] = useState("");
+
+  const [targetCpu, setTargetCpu] = useState("");
+  const [targetGpu, setTargetGpu] = useState("");
+  const [targetPlaca, setTargetPlaca] = useState("");
+  const [targetRam, setTargetRam] = useState("");
+  const [targetStorage, setTargetStorage] = useState("");
+
+  const [validationError, setValidationError] = useState("");
+
+  // Custom components details
+  const [customCpu, setCustomCpu] = useState("");
+  const [customGpu, setCustomGpu] = useState("");
+  const [useCustomCpu, setUseCustomCpu] = useState(false);
+  const [useCustomGpu, setUseCustomGpu] = useState(false);
+
+  // Auto-set upgrade recommendations when current selections change
+  const handleCurrentCpuChange = (val: string) => {
+    setCurrentCpu(val);
+    if (!val) {
+      setTargetCpu("");
+      return;
+    }
+    const recommended = CPU_RECOMMENDATIONS[val];
+    if (recommended) {
+      setTargetCpu(recommended);
+    }
+  };
+
+  const handleCurrentGpuChange = (val: string) => {
+    setCurrentGpu(val);
+    if (!val) {
+      setTargetGpu("");
+      return;
+    }
+    const recommended = GPU_RECOMMENDATIONS[val];
+    if (recommended) {
+      setTargetGpu(recommended);
+    }
+  };
+
+  const handleCurrentPlacaChange = (val: string) => {
+    setCurrentPlaca(val);
+    if (!val) {
+      setTargetPlaca("");
+      return;
+    }
+    const recommended = PLACA_RECOMMENDATIONS[val];
+    if (recommended) {
+      setTargetPlaca(recommended);
+    } else {
+      setTargetPlaca(val);
+    }
+  };
+
+  const handleCurrentRamChange = (val: string) => {
+    setCurrentRam(val);
+    if (!val) {
+      setTargetRam("");
+      return;
+    }
+    const recommended = RAM_RECOMMENDATIONS[val];
+    if (recommended) {
+      setTargetRam(recommended);
+    } else {
+      setTargetRam(val);
+    }
+  };
+
+  const handleCurrentStorageChange = (val: string) => {
+    setCurrentStorage(val);
+    if (!val) {
+      setTargetStorage("");
+      return;
+    }
+    const recommended = STORAGE_RECOMMENDATIONS[val];
+    if (recommended) {
+      setTargetStorage(recommended);
+    } else {
+      setTargetStorage(val);
+    }
+  };
+
+  // States
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [aiReport, setAiReport] = useState("");
+
+  // Conversational AI Assistant state
+  const [chatHistory, setChatHistory] = useState<Message[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState("");
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  // Obtener listas filtradas por marca
-  const cpuList = CPUs[cpuBrand];
-  const gpuList = GPUs[gpuBrand];
-
-  // Cuando cambia la CPU actual, actualizar target CPU con recomendación
+  // Populate first time calculation on mount
   useEffect(() => {
-    const recommendedName = CPU_UPGRADE_MAP[currentCpu.name];
-    if (recommendedName) {
-      const recommended = Object.values(CPUs).flat().find(c => c.name === recommendedName);
-      if (recommended) setTargetCpu(recommended);
-    }
-  }, [currentCpu]);
+    // Welcome message showing current setup details
+    setChatHistory([
+      {
+        sender: "assistant",
+        text: `### ¡Hola Gamer! Soy tu Asistente Técnico Achorao IA. 
+        
+He analizado el simulador de hardware. Me encuentro listo para darte las mejores sugerencias sobre refrigeración, fuentes de poder o si este upgrade tiene cuello de botella. 
 
-  // Cuando cambia la GPU actual, actualizar target GPU
-  useEffect(() => {
-    const recommendedName = GPU_UPGRADE_MAP[currentGpu.name];
-    if (recommendedName) {
-      const recommended = Object.values(GPUs).flat().find(g => g.name === recommendedName);
-      if (recommended) setTargetGpu(recommended);
-    }
-  }, [currentGpu]);
+¿De qué te gustaría hablar hoy? Selecciona una consulta popular abajo o escríbeme directamente.`,
+      },
+    ]);
+  }, []);
 
-  // Cuando cambia la marca de CPU, seleccionar el primer CPU de esa marca
-  useEffect(() => {
-    setCurrentCpu(cpuList[0]);
-  }, [cpuBrand]);
-
-  // Cuando cambia la marca de GPU, seleccionar la primera GPU de esa marca
-  useEffect(() => {
-    setCurrentGpu(gpuList[0]);
-  }, [gpuBrand]);
-
-  // Simular automáticamente al cambiar cualquier componente
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleSimulate();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [currentCpu, currentGpu, currentMobo, currentRam, currentStorage, targetCpu, targetGpu, targetMobo, targetRam, targetStorage]);
+  // Sync handler to match Target PC with current PC components
+  const handleCloneCurrentToTarget = () => {
+    const activeCpu = useCustomCpu ? customCpu || "AMD Ryzen 5 5600X" : currentCpu;
+    const activeGpu = useCustomGpu ? customGpu || "NVIDIA GeForce RTX 3060" : currentGpu;
+    setTargetCpu(activeCpu);
+    setTargetGpu(activeGpu);
+    setTargetPlaca(currentPlaca);
+    setTargetRam(currentRam);
+    setTargetStorage(currentStorage);
+  };
 
   const handleSimulate = async () => {
+    const activeCpu = useCustomCpu ? customCpu : currentCpu;
+    const activeGpu = useCustomGpu ? customGpu : currentGpu;
+
+    if (!activeCpu || !activeGpu || !currentPlaca || !currentRam || !currentStorage ||
+        !targetCpu || !targetGpu || !targetPlaca || !targetRam || !targetStorage) {
+      setValidationError("Por favor, completa la selección de todos los componentes antes de iniciar la simulación.");
+      return;
+    }
+
+    setValidationError("");
     setIsSimulating(true);
+    setAiError("");
+
     try {
-      // Cálculo simulado basado en scores
-      const currentTotalScore = currentCpu.score + currentGpu.score + currentMobo.score + currentRam.score + currentStorage.score;
-      const targetTotalScore = targetCpu.score + targetGpu.score + targetMobo.score + targetRam.score + targetStorage.score;
-      const performanceLift = Math.round(((targetTotalScore - currentTotalScore) / currentTotalScore) * 100);
-
-      // Simular FPS para juegos populares
-      const baseLow = Math.floor(currentTotalScore / 200);
-      const baseUltra = Math.floor(currentTotalScore / 400);
-      const targetLow = Math.floor(targetTotalScore / 180);
-      const targetUltra = Math.floor(targetTotalScore / 350);
-
-      const simulationData: SimulationResult = {
-        currentCpuScore: currentCpu.score,
-        currentGpuScore: currentGpu.score,
-        targetCpuScore: targetCpu.score,
-        targetGpuScore: targetGpu.score,
-        currentFps: {
-          "Fortnite": { low: baseLow + 60, ultra: baseUltra + 30 },
-          "Valorant": { low: baseLow + 120, ultra: baseUltra + 80 },
-          "Cyberpunk 2077": { low: baseLow + 30, ultra: baseUltra + 15 },
-          "Call of Duty": { low: baseLow + 70, ultra: baseUltra + 40 },
-        },
-        targetFps: {
-          "Fortnite": { low: targetLow + 120, ultra: targetUltra + 80 },
-          "Valorant": { low: targetLow + 220, ultra: targetUltra + 160 },
-          "Cyberpunk 2077": { low: targetLow + 60, ultra: targetUltra + 40 },
-          "Call of Duty": { low: targetLow + 140, ultra: targetUltra + 90 },
-        },
-        performanceLiftPercent: performanceLift,
-        bottleneckAnalysis: performanceLift > 30 ? "Mejora significativa, cuello de botella reducido." : "Mejora moderada, revisa compatibilidad de RAM y almacenamiento.",
-        powerRequirementWatts: Math.round(targetTotalScore / 100) + 250,
-      };
-      setSimulation(simulationData);
+      const resCalc = await fetch("/api/simulator/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentCpu: activeCpu,
+          currentGpu: activeGpu,
+          currentPlaca,
+          currentRam,
+          currentStorage,
+          targetCpu: targetCpu,
+          targetGpu: targetGpu,
+          targetPlaca,
+          targetRam,
+          targetStorage,
+        }),
+      });
+      const calcData = await resCalc.json();
+      setSimulation(calcData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -197,242 +273,888 @@ export default function SimulatorConsole() {
     }
   };
 
-  const handleGenerateAiDiagnostic = async () => {
-    if (!simulation) return;
+  // Submit dynamic question to Gemini AI
+  const handleSendAiMessage = async (textToSend?: string) => {
+    const query = textToSend || currentQuestion;
+    if (!query.trim() || !simulation) return;
+
+    // Add user question to history
+    const userMsg: Message = { sender: "user", text: query };
+    setChatHistory((prev) => [...prev, userMsg]);
+    setCurrentQuestion("");
     setIsGeneratingAi(true);
     setAiError("");
-    setAiReport("");
+
+    const activeCpu = useCustomCpu ? customCpu || "AMD Ryzen 5 5600X" : currentCpu;
+    const activeGpu = useCustomGpu ? customGpu || "NVIDIA GeForce RTX 3060" : currentGpu;
+
     try {
-      // Simular respuesta de IA (mock)
-      await new Promise(r => setTimeout(r, 1500));
-      setAiReport(`✅ **Análisis de mejora**\n\nCon tu nueva configuración (${targetCpu.name} + ${targetGpu.name}) obtendrás un +${simulation.performanceLiftPercent}% de rendimiento general.\n\n🔧 **Recomendaciones:**\n- La placa madre ${targetMobo.name} es compatible con tu nuevo procesador.\n- La memoria RAM ${targetRam.name} mejora la velocidad de carga.\n- Considera una fuente de ${Math.ceil((simulation.powerRequirementWatts + 100) / 100) * 100}W 80 Plus Gold para mayor estabilidad.\n\n🎮 **Juegos recomendados para exprimir tu hardware:** Cyberpunk 2077 (ultra), Fortnite (competitivo), y Call of Duty (alto refresh).`);
+      const res = await fetch("/api/simulator/ai-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentCpu: activeCpu,
+          currentGpu: activeGpu,
+          currentPlaca,
+          currentRam,
+          currentStorage,
+          targetCpu,
+          targetGpu,
+          targetPlaca,
+          targetRam,
+          targetStorage,
+          scores: simulation,
+          lift: simulation.performanceLiftPercent,
+          customQuery: query,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setAiError(data.error);
+      } else {
+        setChatHistory((prev) => [...prev, { sender: "assistant", text: data.report }]);
+      }
     } catch (e) {
-      setAiError("Error generando el diagnóstico.");
+      setAiError("Ocurrió un error al contactar al servidor de inteligencia soporte.");
     } finally {
       setIsGeneratingAi(false);
     }
   };
 
+  // Quick preset pills handler
+  const handleQuickQuestionClick = (q: string) => {
+    handleSendAiMessage(q);
+  };
+
+  // Add Target CPU/GPU/Placa/RAM/Storage parts respectively to shopping cart
+  const handleAddTargetToCart = (type: "cpu" | "gpu" | "placa" | "ram" | "storage" | "all") => {
+    if ((type === "cpu" || type === "all") && targetCpu) {
+      const price = COMPONENT_PRICES[targetCpu] || 890.0;
+      onAddToCart({
+        id: `upgrade-cpu-${targetCpu.replace(/\s+/g, "-").toLowerCase()}`,
+        title: `Componente Upgrade: CPU ${targetCpu}`,
+        vendor: "Procesador",
+        price,
+        image: COMPONENT_IMAGES.cpu,
+        available: true,
+      });
+    }
+
+    if ((type === "gpu" || type === "all") && targetGpu) {
+      const price = COMPONENT_PRICES[targetGpu] || 1990.0;
+      onAddToCart({
+        id: `upgrade-gpu-${targetGpu.replace(/\s+/g, "-").toLowerCase()}`,
+        title: `Componente Upgrade: GPU ${targetGpu}`,
+        vendor: "Tarjeta de Video",
+        price,
+        image: COMPONENT_IMAGES.gpu,
+        available: true,
+      });
+    }
+
+    if ((type === "placa" || type === "all") && targetPlaca) {
+      const price = COMPONENT_PRICES[targetPlaca] || 590.0;
+      onAddToCart({
+        id: `upgrade-placa-${targetPlaca.replace(/\s+/g, "-").toLowerCase()}`,
+        title: `Componente Upgrade: Placa Madre ${targetPlaca}`,
+        vendor: "Placa Madre",
+        price,
+        image: COMPONENT_IMAGES.placa,
+        available: true,
+      });
+    }
+
+    if ((type === "ram" || type === "all") && targetRam) {
+      const price = COMPONENT_PRICES[targetRam] || 290.0;
+      onAddToCart({
+        id: `upgrade-ram-${targetRam.replace(/\s+/g, "-").toLowerCase()}`,
+        title: `Componente Upgrade: Memoria RAM ${targetRam}`,
+        vendor: "Memoria RAM",
+        price,
+        image: COMPONENT_IMAGES.ram,
+        available: true,
+      });
+    }
+
+    if ((type === "storage" || type === "all") && targetStorage) {
+      const price = COMPONENT_PRICES[targetStorage] || 290.0;
+      onAddToCart({
+        id: `upgrade-storage-${targetStorage.replace(/\s+/g, "-").toLowerCase()}`,
+        title: `Componente Upgrade: Almacenamiento ${targetStorage}`,
+        vendor: "Almacenamiento",
+        price,
+        image: COMPONENT_IMAGES.storage,
+        available: true,
+      });
+    }
+  };
+
+  const parseBoldText = (text: string) => {
+    const parts = text.split(/\*\*(.*?)\*\*/g);
+    return parts.map((part, i) =>
+      i % 2 === 1 ? (
+        <strong key={i} className="text-white font-extrabold bg-blue-500/10 px-1 rounded-sm">
+          {part}
+        </strong>
+      ) : (
+        part
+      )
+    );
+  };
+
+  const renderMarkdownMessage = (text: string) => {
+    return text.split("\n").map((line, blockIdx) => {
+      const cleanLine = line.trim();
+      if (cleanLine.startsWith("###")) {
+        return (
+          <h4 key={blockIdx} className="text-sm font-black text-blue-400 mt-4 mb-2 uppercase tracking-wide">
+            {cleanLine.replace("###", "")}
+          </h4>
+        );
+      }
+      if (cleanLine.startsWith("##")) {
+        return (
+          <h3 key={blockIdx} className="text-base font-extrabold text-blue-500 mt-5 mb-2 uppercase tracking-wide">
+            {cleanLine.replace("##", "")}
+          </h3>
+        );
+      }
+      if (cleanLine.startsWith("#")) {
+        return (
+          <h2 key={blockIdx} className="text-lg font-black text-white mt-5 mb-3 uppercase">
+            {cleanLine.replace("#", "")}
+          </h2>
+        );
+      }
+      if (cleanLine.startsWith("-") || cleanLine.startsWith("*")) {
+        return (
+          <li key={blockIdx} className="ml-4 list-disc text-xs text-gray-300 my-1 leading-relaxed">
+            {parseBoldText(cleanLine.substring(1).trim())}
+          </li>
+        );
+      }
+      return (
+        <p key={blockIdx} className="text-xs text-gray-300 leading-relaxed my-1.5 break-words">
+          {parseBoldText(cleanLine)}
+        </p>
+      );
+    });
+  };
+
+  const popularCpus = [
+    "AMD Ryzen 5 5600X",
+    "AMD Ryzen 7 5700X",
+    "AMD Ryzen 7 7800X3D",
+    "AMD Ryzen 9 7950X",
+    "Intel Core i5-12400F",
+    "Intel Core i7-13700K",
+    "Intel Core i9-14900K",
+    "Intel Core i3-12100",
+  ];
+
+  const popularGpus = [
+    "NVIDIA GeForce RTX 3060",
+    "NVIDIA GeForce RTX 4060",
+    "NVIDIA GeForce RTX 4070 SUPER",
+    "NVIDIA GeForce RTX 4090",
+    "AMD Radeon RX 6600",
+    "AMD Radeon RX 7800 XT",
+    "NVIDIA GTX 1650",
+    "NVIDIA GeForce RTX 4080 SUPER",
+  ];
+
+  const popularPlacas = [
+    "MSI B550M PRO-VDH WiFi",
+    "ASUS Prime H610M DDR4",
+    "ASUS Prime B760M-A WiFi DDR5",
+    "MSI PRO Z790-A WiFi DDR5",
+    "ASUS TUF Gaming A620M-PLUS (AM5)",
+    "ASUS ROG STRIX X670E-F Gaming AM5",
+  ];
+
+  const popularRams = [
+    "16GB (2x8GB) DDR4 3200MHz",
+    "8GB (1x8GB) DDR4 2666MHz",
+    "16GB (1x16GB) DDR5 5200MHz",
+    "32GB (2x16GB) DDR5 6000MHz",
+    "64GB (2x32GB) DDR5 6400MHz",
+  ];
+
+  const popularStorages = [
+    "SSD Kingston A400 480GB SATA",
+    "HDD Toshiba 1TB SATA 7200 RPM",
+    "SSD Kingston NV2 1TB NVMe PCIe 4.0",
+    "Corsair MP600 Pro 2TB NVMe PCIe 4.0",
+  ];
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-12 text-white space-y-8 select-none" id="simulator-console">
-      {/* Banner superior */}
+      {/* Introduction Banner header */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-xs font-bold uppercase text-red-400 font-mono">
-          <Sparkles size={12} className="animate-spin text-red-400" />
-          SIMULADOR DE MEJORA COMPLETO
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-bold uppercase text-blue-400 font-mono">
+          <Sparkles size={12} className="animate-spin text-blue-400" />
+          SIMULA Y COMPARA
         </div>
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase text-white">
-          Simula tu PC ideal
+          Simular Setup / Upgrade de Computadora
         </h2>
         <p className="text-gray-400 text-sm max-w-2xl mx-auto font-medium">
-          Compara componentes: CPU, GPU, placa madre, RAM y almacenamiento. Proyectamos el rendimiento y FPS en juegos.
+          Compara tus especificaciones y encuentra las mermas potenciales de rendimiento FPS. Haz clic en "Simular Ahora" para actualizar el Lift de rendimiento y añadir piezas a tu compra.
         </p>
       </div>
 
+      {/* Main configuration layout */}
       <div className="space-y-8">
-        {/* Panel de configuración */}
+        {/* Hardware setup inputs */}
         <div className="w-full bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
             <div className="flex items-center gap-2">
-              <Cpu className="text-red-500" size={20} />
-              <span className="font-bold text-sm tracking-wider uppercase">Configuración completa</span>
+              <Cpu className="text-blue-500" size={20} />
+              <span className="font-bold text-sm tracking-wider uppercase text-white">Configuración de Hardware</span>
             </div>
-            <div className="flex gap-2">
-              <span className="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] px-2.5 py-1 rounded-full font-bold">Recomendación Activa</span>
-            </div>
+            
+            <button
+              onClick={handleCloneCurrentToTarget}
+              className="text-[10px] bg-white/5 border border-white/10 hover:border-blue-500 text-gray-300 hover:text-white px-3 py-1.5 rounded-full font-bold uppercase transition-all flex items-center gap-1 cursor-pointer"
+            >
+              <Zap size={11} className="text-yellow-400" />
+              Clonar PC Actual a Objetivo
+            </button>
           </div>
 
-          {/* Grid de dos columnas: PC Actual vs Objetivo */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* PC ACTUAL */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Current PC details (Left side) */}
             <div className="space-y-4">
-              <div className="bg-[#0A0A0B] border border-white/5 rounded-xl p-3">
-                <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">🖥️ TU PC ACTUAL</h3>
+              <div className="p-1 px-3 bg-[#0A0A0B] border border-white/5 rounded-xl">
+                <span className="text-[10px] text-gray-500 font-bold uppercase font-mono">Tu PC Actual</span>
               </div>
 
-              {/* Marca CPU */}
+              {/* CPU selection */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Marca de CPU</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-bold text-gray-400">Procesador (CPU)</label>
+                  <button
+                    onClick={() => setUseCustomCpu(!useCustomCpu)}
+                    className="text-[10px] text-blue-400 font-bold hover:underline cursor-pointer"
+                  >
+                    {useCustomCpu ? "Usar Prefijado" : "Escribir Personalizado"}
+                  </button>
+                </div>
+
+                {useCustomCpu ? (
+                  <input
+                    type="text"
+                    placeholder="Por ejemplo: Ryzen 5 3600"
+                    value={customCpu}
+                    onChange={(e) => setCustomCpu(e.target.value)}
+                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    id="custom-cpu-input"
+                  />
+                ) : (
+                  <select
+                    value={currentCpu}
+                    onChange={(e) => handleCurrentCpuChange(e.target.value)}
+                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    id="current-cpu-select"
+                  >
+                    <option value="">-- Seleccionar CPU (Actual) --</option>
+                    {popularCpus.map((cpu) => (
+                      <option key={cpu} value={cpu}>
+                        {cpu}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* GPU selection */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-bold text-gray-400">Gráfica (GPU)</label>
+                  <button
+                    onClick={() => setUseCustomGpu(!useCustomGpu)}
+                    className="text-[10px] text-blue-400 font-bold hover:underline cursor-pointer"
+                  >
+                    {useCustomGpu ? "Usar Prefijado" : "Escribir Personalizado"}
+                  </button>
+                </div>
+
+                {useCustomGpu ? (
+                  <input
+                    type="text"
+                    placeholder="Por ejemplo: NVIDIA GTX 1060"
+                    value={customGpu}
+                    onChange={(e) => setCustomGpu(e.target.value)}
+                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    id="custom-gpu-input"
+                  />
+                ) : (
+                  <select
+                    value={currentGpu}
+                    onChange={(e) => handleCurrentGpuChange(e.target.value)}
+                    className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    id="current-gpu-select"
+                  >
+                    <option value="">-- Seleccionar GPU (Actual) --</option>
+                    {popularGpus.map((gpu) => (
+                      <option key={gpu} value={gpu}>
+                        {gpu}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Placa Madre selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Placa Madre</label>
+                <select
+                  value={currentPlaca}
+                  onChange={(e) => handleCurrentPlacaChange(e.target.value)}
+                  className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                  id="current-placa-select"
+                >
+                  <option value="">-- Seleccionar Placa (Actual) --</option>
+                  {popularPlacas.map((placa) => (
+                    <option key={placa} value={placa}>
+                      {placa}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Memoria RAM selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Memoria RAM</label>
+                <select
+                  value={currentRam}
+                  onChange={(e) => handleCurrentRamChange(e.target.value)}
+                  className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                  id="current-ram-select"
+                >
+                  <option value="">-- Seleccionar RAM (Actual) --</option>
+                  {popularRams.map((ram) => (
+                    <option key={ram} value={ram}>
+                      {ram}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Almacenamiento selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Almacenamiento</label>
+                <select
+                  value={currentStorage}
+                  onChange={(e) => handleCurrentStorageChange(e.target.value)}
+                  className="w-full h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                  id="current-storage-select"
+                >
+                  <option value="">-- Seleccionar Disco (Actual) --</option>
+                  {popularStorages.map((storage) => (
+                    <option key={storage} value={storage}>
+                      {storage}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Upgrade target / Recommended details (Right side) */}
+            <div className="space-y-4">
+              <div className="p-1 px-3 bg-[#0A0A0B] border border-white/5 rounded-xl flex items-center justify-between">
+                <span className="text-[10px] text-blue-400 font-bold uppercase font-mono">Objetivo de Upgrade / PC Destino</span>
+                <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold rounded px-1.5 font-mono">SELECCIONADO</span>
+              </div>
+
+              {/* Target CPU */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Procesador Destino</label>
                 <div className="flex gap-2">
-                  <button onClick={() => setCpuBrand("intel")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${cpuBrand === "intel" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>Intel</button>
-                  <button onClick={() => setCpuBrand("amd")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${cpuBrand === "amd" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>AMD</button>
+                  <select
+                    value={targetCpu}
+                    onChange={(e) => setTargetCpu(e.target.value)}
+                    className="flex-1 h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    id="target-cpu-select"
+                  >
+                    <option value="">-- Seleccionar CPU (Destino) --</option>
+                    {popularCpus.map((cpu) => (
+                      <option key={cpu} value={cpu}>
+                        {cpu}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAddTargetToCart("cpu")}
+                    disabled={!targetCpu}
+                    className="px-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-gray-600 text-white rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Agregar CPU al Carrito"
+                  >
+                    <ShoppingCart size={13} />
+                    <span className="hidden sm:inline">Agregar</span>
+                  </button>
                 </div>
               </div>
 
-              {/* CPU */}
+              {/* Target GPU */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Procesador</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentCpu.id} onChange={(e) => setCurrentCpu(cpuList.find(c => c.id === e.target.value)!)}>
-                  {cpuList.map(cpu => <option key={cpu.id} value={cpu.id}>{cpu.name} - S/. {cpu.price}</option>)}
-                </select>
-              </div>
-
-              {/* Marca GPU */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Marca de GPU</label>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Gráfica Destina</label>
                 <div className="flex gap-2">
-                  <button onClick={() => setGpuBrand("nvidia")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${gpuBrand === "nvidia" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>NVIDIA</button>
-                  <button onClick={() => setGpuBrand("amd")} className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${gpuBrand === "amd" ? "bg-red-600 text-white" : "bg-black/40 border border-white/10 hover:border-red-500"}`}>AMD</button>
+                  <select
+                    value={targetGpu}
+                    onChange={(e) => setTargetGpu(e.target.value)}
+                    className="flex-1 h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    id="target-gpu-select"
+                  >
+                    <option value="">-- Seleccionar GPU (Destino) --</option>
+                    {popularGpus.map((gpu) => (
+                      <option key={gpu} value={gpu}>
+                        {gpu}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAddTargetToCart("gpu")}
+                    disabled={!targetGpu}
+                    className="px-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-gray-600 text-white rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Agregar GPU al Carrito"
+                  >
+                    <ShoppingCart size={13} />
+                    <span className="hidden sm:inline">Agregar</span>
+                  </button>
                 </div>
               </div>
 
-              {/* GPU */}
+              {/* Target Placa Madre */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Tarjeta Gráfica</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentGpu.id} onChange={(e) => setCurrentGpu(gpuList.find(g => g.id === e.target.value)!)}>
-                  {gpuList.map(gpu => <option key={gpu.id} value={gpu.id}>{gpu.name} - S/. {gpu.price}</option>)}
-                </select>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Placa Madre Destino</label>
+                <div className="flex gap-2">
+                  <select
+                    value={targetPlaca}
+                    onChange={(e) => setTargetPlaca(e.target.value)}
+                    className="flex-1 h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    id="target-placa-select"
+                  >
+                    <option value="">-- Seleccionar Placa (Destino) --</option>
+                    {popularPlacas.map((placa) => (
+                      <option key={placa} value={placa}>
+                        {placa}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAddTargetToCart("placa")}
+                    disabled={!targetPlaca}
+                    className="px-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-gray-600 text-white rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Agregar Placa al Carrito"
+                  >
+                    <ShoppingCart size={13} />
+                    <span className="hidden sm:inline">Agregar</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Placa Madre */}
+              {/* Target Memoria RAM */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Placa Madre</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentMobo.id} onChange={(e) => setCurrentMobo(Object.values(Motherboards).flat().find(m => m.id === e.target.value)!)}>
-                  {Object.values(Motherboards).flat().map(mb => <option key={mb.id} value={mb.id}>{mb.name} - S/. {mb.price}</option>)}
-                </select>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">RAM Destino</label>
+                <div className="flex gap-2">
+                  <select
+                    value={targetRam}
+                    onChange={(e) => setTargetRam(e.target.value)}
+                    className="flex-1 h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    id="target-ram-select"
+                  >
+                    <option value="">-- Seleccionar RAM (Destino) --</option>
+                    {popularRams.map((ram) => (
+                      <option key={ram} value={ram}>
+                        {ram}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAddTargetToCart("ram")}
+                    disabled={!targetRam}
+                    className="px-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-gray-600 text-white rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Agregar RAM al Carrito"
+                  >
+                    <ShoppingCart size={13} />
+                    <span className="hidden sm:inline">Agregar</span>
+                  </button>
+                </div>
               </div>
 
-              {/* RAM */}
+              {/* Target Almacenamiento */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Memoria RAM</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentRam.id} onChange={(e) => setCurrentRam(Object.values(RAMs).flat().find(r => r.id === e.target.value)!)}>
-                  {Object.values(RAMs).flat().map(ram => <option key={ram.id} value={ram.id}>{ram.name} - S/. {ram.price}</option>)}
-                </select>
+                <label className="block text-xs font-bold text-gray-400 mb-1 font-sans">Almacenamiento Destino</label>
+                <div className="flex gap-2">
+                  <select
+                    value={targetStorage}
+                    onChange={(e) => setTargetStorage(e.target.value)}
+                    className="flex-1 h-10 bg-[#0A0A0B] border border-white/10 rounded-xl px-3 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                    id="target-storage-select"
+                  >
+                    <option value="">-- Seleccionar Disco (Destino) --</option>
+                    {popularStorages.map((storage) => (
+                      <option key={storage} value={storage}>
+                        {storage}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAddTargetToCart("storage")}
+                    disabled={!targetStorage}
+                    className="px-3 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-gray-600 text-white rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Agregar Almacenamiento al Carrito"
+                  >
+                    <ShoppingCart size={13} />
+                    <span className="hidden sm:inline">Agregar</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Almacenamiento */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Almacenamiento</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={currentStorage.id} onChange={(e) => setCurrentStorage(Storages.find(s => s.id === e.target.value)!)}>
-                  {Storages.map(ssd => <option key={ssd.id} value={ssd.id}>{ssd.name} - S/. {ssd.price}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* PC OBJETIVO (UPGRADE) */}
-            <div className="space-y-4">
-              <div className="bg-[#0A0A0B] border border-white/5 rounded-xl p-3">
-                <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-wider">🎯 PC OBJETIVO (Upgrade recomendado)</h3>
-              </div>
-
-              {/* CPU Target */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Procesador objetivo</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetCpu.id} onChange={(e) => setTargetCpu(Object.values(CPUs).flat().find(c => c.id === e.target.value)!)}>
-                  {Object.values(CPUs).flat().map(cpu => <option key={cpu.id} value={cpu.id}>{cpu.name} - S/. {cpu.price}</option>)}
-                </select>
-              </div>
-
-              {/* GPU Target */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Tarjeta Gráfica objetivo</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetGpu.id} onChange={(e) => setTargetGpu(Object.values(GPUs).flat().find(g => g.id === e.target.value)!)}>
-                  {Object.values(GPUs).flat().map(gpu => <option key={gpu.id} value={gpu.id}>{gpu.name} - S/. {gpu.price}</option>)}
-                </select>
-              </div>
-
-              {/* Placa Madre Target */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Placa Madre objetivo</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetMobo.id} onChange={(e) => setTargetMobo(Object.values(Motherboards).flat().find(m => m.id === e.target.value)!)}>
-                  {Object.values(Motherboards).flat().map(mb => <option key={mb.id} value={mb.id}>{mb.name} - S/. {mb.price}</option>)}
-                </select>
-              </div>
-
-              {/* RAM Target */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Memoria RAM objetivo</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetRam.id} onChange={(e) => setTargetRam(Object.values(RAMs).flat().find(r => r.id === e.target.value)!)}>
-                  {Object.values(RAMs).flat().map(ram => <option key={ram.id} value={ram.id}>{ram.name} - S/. {ram.price}</option>)}
-                </select>
-              </div>
-
-              {/* Almacenamiento Target */}
-              <div>
-                <label className="block text-xs font-bold text-gray-400 mb-1">Almacenamiento objetivo</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm" value={targetStorage.id} onChange={(e) => setTargetStorage(Storages.find(s => s.id === e.target.value)!)}>
-                  {Storages.map(ssd => <option key={ssd.id} value={ssd.id}>{ssd.name} - S/. {ssd.price}</option>)}
-                </select>
+              {/* master Agregar Todos al Carrito button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => handleAddTargetToCart("all")}
+                  disabled={!targetCpu && !targetGpu && !targetPlaca && !targetRam && !targetStorage}
+                  className="w-full h-10 bg-blue-600 hover:bg-blue-500 disabled:bg-white/5 disabled:text-gray-600 text-white rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <ShoppingCart size={14} />
+                  Agregar Componentes Seleccionados al Carrito
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Botón simular manual */}
-          <div className="flex justify-end pt-4">
-            <button onClick={handleSimulate} disabled={isSimulating} className="h-11 px-6 bg-red-600 hover:bg-red-500 disabled:bg-gray-800 text-white font-bold uppercase rounded-xl flex items-center gap-2">
-              {isSimulating ? <><Loader2 className="animate-spin" size={16} /> Simulando...</> : <><Gauge size={16} /> Simular ahora</>}
+          {/* Validation Message display if any components unselected */}
+          {validationError && (
+            <div className="flex items-center gap-2 p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold animate-in fade-in duration-200">
+              <AlertTriangle size={15} className="text-red-400 shrink-0" />
+              <span>{validationError}</span>
+            </div>
+          )}
+
+          {/* Action and status footer containing manual trigger button */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
+            <div className="flex items-center gap-2 text-xs text-gray-400 text-left">
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></div>
+              <span>Cambia los procesadores o tarjetas de arriba y pulsa "Simular Ahora" para recalcular el lift de rendimiento.</span>
+            </div>
+
+            <button
+              onClick={handleSimulate}
+              disabled={isSimulating}
+              className="w-full sm:w-auto h-11 px-8 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-600 text-white font-bold uppercase tracking-wider text-xs rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shadow-blue-500/10 hover:scale-[1.02]"
+              id="btn-trigger-simulation"
+            >
+              {isSimulating ? (
+                <>
+                  <Loader2 className="animate-spin text-white" size={16} />
+                  Calculando Upgrades...
+                </>
+              ) : (
+                <>
+                  <Gauge size={16} />
+                  Simular Ahora
+                </>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Resultados de simulación */}
-        {simulation && (
-          <div className="bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6 animate-in fade-in duration-300">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
-              <div>
-                <span className="text-xs text-red-400 font-bold uppercase">LIFT DE RENDIMIENTO</span>
-                <p className="text-xs text-gray-400">Puntaje combinado (todos los componentes)</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-[#0A0A0B] px-4 py-2 rounded-xl text-center">
-                  <span className="block text-[9px] text-gray-500">Actual</span>
-                  <span className="font-bold text-white">{(simulation.currentCpuScore + simulation.currentGpuScore + 5000).toLocaleString()} pts</span>
+        {/* Live Simulator feedback results */}
+        <div className="space-y-6">
+          {simulation ? (
+            <div className="bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6 animate-in fade-in duration-300 font-sans">
+              
+              {/* Target PC Cart Integrations Panel */}
+              <div className="bg-gradient-to-r from-blue-900/15 via-black/40 to-blue-900/5 border border-blue-500/15 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-left space-y-1">
+                  <span className="text-[10px] text-blue-400 font-black tracking-widest uppercase font-mono">ADQUISICIÓN DE UPGRADE</span>
+                  <h4 className="text-xs font-semibold text-white">¿Te gusta este rendimiento? Agrega las piezas seleccionadas a tu carrito</h4>
+                  <p className="text-[10px] text-gray-500">Puedes agregarlos de forma individual con un clic.</p>
                 </div>
-                <span className="text-red-500">➔</span>
-                <div className="bg-red-500/10 px-4 py-2 rounded-xl text-center">
-                  <span className="block text-[9px] text-red-400">Objetivo</span>
-                  <span className="font-bold text-white">{(simulation.targetCpuScore + simulation.targetGpuScore + 8000).toLocaleString()} pts</span>
-                </div>
-                <div className="bg-yellow-600 text-black font-bold px-3 py-2 rounded-xl">+{simulation.performanceLiftPercent}%</div>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-red-400 font-mono text-xs">
-                <Gamepad2 size={16} /> FPS estimados en juegos (1080p)
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+                  <button
+                    onClick={() => handleAddTargetToCart("cpu")}
+                    className="h-9 px-3 bg-[#0A0A0B] border border-white/10 hover:border-blue-500/50 text-[11px] text-white rounded-xl transition-all font-bold uppercase cursor-pointer"
+                    title={`Agregar CPU ${targetCpu}`}
+                  >
+                    + CPU
+                  </button>
+                  <button
+                    onClick={() => handleAddTargetToCart("gpu")}
+                    className="h-9 px-3 bg-[#0A0A0B] border border-white/10 hover:border-blue-500/50 text-[11px] text-white rounded-xl transition-all font-bold uppercase cursor-pointer"
+                    title={`Agregar GPU ${targetGpu}`}
+                  >
+                    + GPU
+                  </button>
+                  <button
+                    onClick={() => handleAddTargetToCart("placa")}
+                    className="h-9 px-3 bg-[#0A0A0B] border border-white/10 hover:border-blue-500/50 text-[11px] text-white rounded-xl transition-all font-bold uppercase cursor-pointer"
+                    title={`Agregar Placa ${targetPlaca}`}
+                  >
+                    + Placa
+                  </button>
+                  <button
+                    onClick={() => handleAddTargetToCart("ram")}
+                    className="h-9 px-3 bg-[#0A0A0B] border border-white/10 hover:border-blue-500/50 text-[11px] text-white rounded-xl transition-all font-bold uppercase cursor-pointer"
+                    title={`Agregar RAM ${targetRam}`}
+                  >
+                    + RAM
+                  </button>
+                  <button
+                    onClick={() => handleAddTargetToCart("storage")}
+                    className="h-9 px-3 bg-[#0A0A0B] border border-white/10 hover:border-blue-500/50 text-[11px] text-white rounded-xl transition-all font-bold uppercase cursor-pointer"
+                    title={`Agregar Disco ${targetStorage}`}
+                  >
+                    + Disco
+                  </button>
+                  <button
+                    onClick={() => handleAddTargetToCart("all")}
+                    className="h-9 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] transition-all font-black uppercase flex items-center gap-1 cursor-pointer"
+                    title="Agregar todos los componentes destinos al carrito"
+                  >
+                    <ShoppingCart size={13} />
+                    Agregar Todo
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.keys(simulation.currentFps).map(game => {
-                  const cur = simulation.currentFps[game];
-                  const tar = simulation.targetFps[game];
-                  return (
-                    <div key={game} className="bg-[#0A0A0B] border border-white/5 rounded-2xl p-3">
-                      <div className="font-bold text-white text-sm mb-2">{game}</div>
-                      <div className="text-[11px] text-gray-400 flex justify-between">Bajo: {cur.low} → <span className="text-yellow-400 font-bold">{tar.low}</span></div>
-                      <div className="text-[11px] text-gray-400 flex justify-between">Ultra: {cur.ultra} → <span className="text-yellow-400 font-bold">{tar.ultra}</span></div>
+
+              {/* Dynamic performance lift score indicator */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/5 pb-4 font-sans">
+                <div className="text-center sm:text-left">
+                  <span className="text-xs text-blue-400 font-bold uppercase tracking-wider font-mono">LIFT DE DESEMPEÑO SINTÉTICO</span>
+                  <p className="text-xs text-gray-400">Puntaje combinado (PassMark CPU & GPU Marks)</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-center bg-[#0A0A0B] border border-white/5 px-4 py-2 rounded-xl text-xs font-mono">
+                    <span className="block text-gray-500 font-bold uppercase text-[9px]">Actual</span>
+                    <span className="font-bold text-gray-200 text-sm">
+                      {(simulation.currentCpuScore + simulation.currentGpuScore).toLocaleString()} pts
+                    </span>
+                  </div>
+                  <div className="text-blue-500 font-bold">➔</div>
+                  <div className="text-center bg-blue-500/10 border border-blue-500/20 px-4 py-2 rounded-xl text-xs text-blue-400 font-mono">
+                    <span className="block text-blue-500 font-bold uppercase text-[9px]">Upgrade</span>
+                    <span className="font-bold text-sm">
+                      {(simulation.targetCpuScore + simulation.targetGpuScore).toLocaleString()} pts
+                    </span>
+                  </div>
+                  <div className="bg-emerald-600 text-white font-bold text-sm px-3 py-2 rounded-xl font-mono">
+                    +{simulation.performanceLiftPercent}%
+                  </div>
+                </div>
+              </div>
+
+              {/* FPS projection in Games (Fortnite, Valorant, Cyberpunk 2077) */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-400 font-mono">
+                  <Gamepad2 size={16} />
+                  Simulación de FPS Promedio en Juegos (1080p)
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {Object.keys(simulation.currentFps).map((gameName) => {
+                    const cf = (simulation.currentFps as any)[gameName];
+                    const tf = (simulation.targetFps as any)[gameName];
+
+                    return (
+                      <div key={gameName} className="bg-[#0A0A0B] border border-white/5 rounded-2xl p-4 space-y-3">
+                        <span className="text-xs font-bold text-white block truncate">{gameName}</span>
+
+                        <div className="space-y-2">
+                          {/* Low settings progress comparison */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[11px] text-gray-400 font-medium">
+                              <span>Gráficos Bajo (Esports)</span>
+                              <span className="font-mono text-xs">
+                                {cf.low} FPS <span className="text-emerald-400 font-bold">➔ {tf.low} FPS</span>
+                              </span>
+                            </div>
+                            <div className="h-2 bg-black/40 rounded-full overflow-hidden flex">
+                              <div
+                                style={{ width: `${(cf.low / 360) * 100}%` }}
+                                className="h-full bg-gray-700 rounded-l-full"
+                              ></div>
+                              <div
+                                style={{ width: `${Math.max(0, ((tf.low - cf.low) / 360) * 100)}%` }}
+                                className="h-full bg-emerald-500 rounded-r-full"
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Ultra settings progress comparison */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[11px] text-gray-400 font-medium font-sans">
+                              <span>Gráficos Ultra (Calidad)</span>
+                              <span className="font-mono text-xs">
+                                {cf.ultra} FPS <span className="text-emerald-400 font-bold">➔ {tf.ultra} FPS</span>
+                              </span>
+                            </div>
+                            <div className="h-2 bg-black/40 rounded-full overflow-hidden flex">
+                              <div
+                                style={{ width: `${(cf.ultra / 240) * 100}%` }}
+                                className="h-full bg-gray-700 rounded-l-full"
+                              ></div>
+                              <div
+                                style={{ width: `${Math.max(0, ((tf.ultra - cf.ultra) / 240) * 100)}%` }}
+                                className="h-full bg-emerald-500 rounded-r-full"
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Energy recommendation and power estimates */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                <div className="sm:col-span-12 md:col-span-7 bg-black/30 border border-white/5 rounded-2xl p-4 flex gap-3 items-start">
+                  <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
+                    <AlertTriangle size={18} />
+                  </div>
+                  <div className="text-xs space-y-1 text-left">
+                    <span className="font-bold uppercase tracking-wider text-orange-400 block font-mono">
+                      Auditoría de Cuello de Botella
+                    </span>
+                    <p className="text-gray-300 leading-relaxed">{simulation.bottleneckAnalysis}</p>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-12 md:col-span-5 bg-black/30 border border-white/5 rounded-2xl p-4 flex gap-3 items-start">
+                  <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-400 font-mono">
+                    <Zap size={18} className="animate-pulse" />
+                  </div>
+                  <div className="text-xs space-y-1 text-left">
+                    <span className="font-bold uppercase tracking-wider text-blue-400 block font-mono">
+                      Uso de Energía Recomendado
+                    </span>
+                    <p className="text-gray-300 text-[11px] leading-relaxed">
+                      TDP Estimado total: <strong>{simulation.powerRequirementWatts}W</strong>. Se aconseja una fuente certificada <strong>80 Plus de {Math.ceil((simulation.powerRequirementWatts + 150) / 100) * 100}W</strong> para óptima seguridad de tu inversión.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Highly interactive graphical AI Consultation chat messenger board */}
+              <div className="border-t border-white/10 pt-6 space-y-4 font-sans text-left">
+                <div className="flex gap-2 items-center">
+                  <div className="p-1.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-500/10">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <h5 className="font-extrabold text-sm text-white">Consultor de Hardware Achorao AI</h5>
+                    <p className="text-[11px] text-gray-500">¿Tienes dudas del ensamble? Puedes preguntarle sugerencias personalizadas de placas, latencias o marca de fuente</p>
+                  </div>
+                </div>
+
+                {/* AI Chat History Box */}
+                <div className="bg-[#0A0A0B] border border-white/5 rounded-2xl p-4 max-h-[380px] overflow-y-auto space-y-4">
+                  {chatHistory.map((m, idx) => (
+                    <div key={idx} className={`flex items-start gap-3 ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
+                      {m.sender === "assistant" && (
+                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow shadow-blue-500/20">
+                          A
+                        </div>
+                      )}
+
+                      <div className={`p-4.5 rounded-2xl max-w-[85%] text-xs ${
+                        m.sender === "user" 
+                          ? "bg-blue-600 text-white rounded-tr-none font-medium ml-12"
+                          : "bg-white/[0.03] border border-white/5 text-gray-300 rounded-tl-none mr-12"
+                      }`}>
+                        {m.sender === "assistant" ? renderMarkdownMessage(m.text) : <p className="leading-relaxed whitespace-pre-wrap">{m.text}</p>}
+                      </div>
+
+                      {m.sender === "user" && (
+                        <div className="w-8 h-8 rounded-full bg-gray-800 text-gray-200 flex items-center justify-center shrink-0">
+                          <User size={14} />
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  ))}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-black/30 p-4 rounded-xl flex gap-3">
-                <AlertTriangle className="text-orange-400" size={20} />
-                <div>
-                  <span className="font-bold text-orange-400 text-xs">Cuello de botella</span>
-                  <p className="text-xs text-gray-300">{simulation.bottleneckAnalysis}</p>
+                  {isGeneratingAi && (
+                    <div className="flex items-center gap-3 justify-start">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs animate-pulse">
+                        A
+                      </div>
+                      <div className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl rounded-tl-none flex items-center gap-2 text-xs text-blue-400 font-semibold font-mono">
+                        <Loader2 className="animate-spin text-blue-400" size={14} />
+                        El Técnico de soporte Achorao está respondiendo...
+                      </div>
+                    </div>
+                  )}
+
+                  {aiError && (
+                    <div className="p-3 bg-red-900/15 border border-red-500/20 text-red-400 rounded-xl text-xs font-mono">
+                      {aiError}
+                    </div>
+                  )}
+                </div>
+
+                {/* Popular Pills Recommendations Tag Box */}
+                <div className="space-y-1.5">
+                  <span className="text-[9px] text-gray-500 font-black tracking-widest font-mono uppercase block">Sugerencias recomendadas:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "¿Qué fuente de poder me recomiendas para este upgrade?",
+                      "¿Este procesador limitará el rendimiento de mi gráfica?",
+                      "¿Qué opciones de placas madre AM5/Intel recomendadas hay para este setup?",
+                      "Dame consejos rápidos para refrigerar bien este setup.",
+                    ].map((pill) => (
+                      <button
+                        key={pill}
+                        onClick={() => handleQuickQuestionClick(pill)}
+                        disabled={isGeneratingAi}
+                        className="text-[10px] bg-white/[0.02] border border-white/10 hover:border-blue-500/50 hover:bg-blue-950/20 text-gray-400 hover:text-white px-3 py-1.5 rounded-full transition-all cursor-pointer font-medium disabled:opacity-50"
+                      >
+                        {pill}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Question Input Container */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Escribe tu consulta sobre el upgrade..."
+                    value={currentQuestion}
+                    onChange={(e) => setCurrentQuestion(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isGeneratingAi) handleSendAiMessage();
+                    }}
+                    disabled={isGeneratingAi}
+                    className="flex-1 h-11 bg-[#0A0A0B] border border-white/10 rounded-xl px-4 text-xs text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-40"
+                  />
+                  <button
+                    onClick={() => handleSendAiMessage()}
+                    disabled={isGeneratingAi || !currentQuestion.trim()}
+                    className="w-11 h-11 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-500 text-white rounded-xl flex items-center justify-center transition-all cursor-pointer select-none"
+                  >
+                    <Send size={15} />
+                  </button>
                 </div>
               </div>
-              <div className="bg-black/30 p-4 rounded-xl flex gap-3">
-                <Zap className="text-red-400" size={20} />
-                <div>
-                  <span className="font-bold text-red-400 text-xs">Requerimiento energético</span>
-                  <p className="text-xs text-gray-300">Fuente recomendada: {Math.ceil((simulation.powerRequirementWatts + 100) / 100) * 100}W 80 Plus Gold</p>
-                </div>
+
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-white/5 rounded-3xl space-y-4 bg-black/10 font-sans">
+              <Gauge className="text-gray-700" size={48} />
+              <div>
+                <h4 className="text-base font-bold text-gray-300">Monitoreo de Upgrade Inactivo</h4>
+                <p className="text-xs text-gray-500 max-w-sm mt-1 leading-normal">
+                  Ingresa las combinaciones de procesadores y tarjetas de video de arriba y presiona "Simular Ahora" para proyectar tus FPS competitivos.
+                </p>
               </div>
             </div>
-
-            {/* IA */}
-            <div className="border-t pt-4">
-              <button onClick={handleGenerateAiDiagnostic} disabled={isGeneratingAi} className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2">
-                <Sparkles size={14} /> {isGeneratingAi ? "Generando..." : "Consultar a la IA"}
-              </button>
-              {aiError && <div className="text-red-400 text-xs mt-2">{aiError}</div>}
-              {aiReport && <div className="bg-[#0A0A0B] p-4 rounded-xl mt-3 text-sm whitespace-pre-wrap">{aiReport}</div>}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

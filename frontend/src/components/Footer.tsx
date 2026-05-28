@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { ChevronUp, Phone, Mail, MapPin, Award, CheckCircle2 } from "lucide-react";
+import { Award, CheckCircle2, ChevronUp, Mail, MapPin, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface FooterProps {
   currentDistrict?: string;
   onOpenLocationModal?: () => void;
 }
 
-export default function Footer({ currentDistrict}: FooterProps) {
+export default function Footer({ currentDistrict, onOpenLocationModal }: FooterProps) {
   const [showScroll, setShowScroll] = useState(false);
 
   useEffect(() => {
