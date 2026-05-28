@@ -1,30 +1,40 @@
 import { Calculator, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 
+/**
+ * Interfaz que define las propiedades del componente ProductCalculator
+ */
 interface ProductCalculatorProps {
   basePrice: number; // S/. 339.90
   onAddToCart: () => void;
 }
 
+/**
+ * Componente 'ProductCalculator'
+ * Herramienta de cotización interactiva y simulación de pasarelas de pago en tiempo real
+ * Permite calcular de forma automática el impacto en el precio según el método seleccionado:
+ *  efectivo/transferencia sin comisiones, recargo de tarjeta de crédito (5%), factor de conversión de millas/puntos,
+ *  financiamiento inteligente en cuotas fijas y conversión a divisa extranjera (USD) mediante un tipo de cambio simulado.
+ */
 export default function ProductCalculator({ basePrice, onAddToCart }: ProductCalculatorProps) {
   const [selectedMethod, setSelectedMethod] = useState<"cash" | "card" | "miles" | "cuotas" | "paypal">("cash");
   const [exchangeRate, setExchangeRate] = useState<number>(3.76); // Custom mock/Live Peruvian FX rate
 
   useEffect(() => {
-    // Quick async fetch simulation for FX rate
+    // Simulación de actualización dinámica del tipo de cambio cada vez que se monta el componente
     setExchangeRate(3.72 + Math.random() * 0.08);
   }, []);
 
   // Payments logic
   const cashPrice = basePrice;
-  const cardPrice = basePrice * 1.05; // 5% CC surcharge
-  const milesNeeded = Math.round(cardPrice / 0.03); // Millas standard conversion factor
+  const cardPrice = basePrice * 1.05; // 5% de recargo por uso de tarjeta
+  const milesNeeded = Math.round(cardPrice / 0.03); // 1 punto = S/. 0.03 de valor, redondeado al punto entero más cercano
   const monthlyInstallment = Math.round(cardPrice / 3);
   const paypalUsd = (cardPrice / exchangeRate).toFixed(2);
 
   return (
     <div className="bg-[#0F0F12] border border-white/10 rounded-2xl p-6 space-y-5 shadow-xl text-white select-none">
-      {/* Title & Badge */}
+      {/* Titulo y Badge */}
       <div className="flex items-center justify-between border-b border-white/5 pb-3">
         <div>
           <span className="text-xs text-blue-400 font-bold uppercase tracking-wider font-mono">COTIZADOR AL INSTANTE</span>
@@ -36,7 +46,7 @@ export default function ProductCalculator({ basePrice, onAddToCart }: ProductCal
         </div>
       </div>
 
-      {/* Pricing Header Display */}
+      {/* Precio */}
       <div className="bg-[#0A0A0B] rounded-xl p-4 text-center border border-white/5 space-y-1">
         <div className="flex justify-center items-baseline gap-2">
           {selectedMethod === "cash" && (
@@ -67,7 +77,7 @@ export default function ProductCalculator({ basePrice, onAddToCart }: ProductCal
         </p>
       </div>
 
-      {/* Tabs */}
+      {/* Opciones de Pago */}
       <div className="grid grid-cols-5 gap-1.5 p-1 bg-[#0A0A0B] border border-white/10 rounded-xl">
         <button
           onClick={() => setSelectedMethod("cash")}
@@ -116,7 +126,7 @@ export default function ProductCalculator({ basePrice, onAddToCart }: ProductCal
         </button>
       </div>
 
-      {/* Payment detail summary card */}
+      {/* Detalle de Pago */}
       <div className="bg-[#0A0A0B]/40 rounded-xl p-4 border border-white/5 text-xs text-gray-300 space-y-2.5">
         <div className="flex items-center gap-2 text-white">
           <Info size={14} className="text-blue-400" />
@@ -149,7 +159,7 @@ export default function ProductCalculator({ basePrice, onAddToCart }: ProductCal
         )}
       </div>
 
-      {/* Cart submission action */}
+      {/* Botón de Agregar al Carrito */}
       <button
         onClick={onAddToCart}
         className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded-xl transition-all tracking-widest text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/10 hover:shadow-blue-600/20 cursor-pointer"

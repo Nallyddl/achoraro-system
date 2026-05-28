@@ -11,10 +11,10 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Mount the backend API router
+// Montar el router de la API en la ruta "/api"
 app.use("/api", apiRouter as any);
 
-// Configure Vite middleware or static server
+// Configurar el servidor para servir archivos estáticos y manejar rutas en producción
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

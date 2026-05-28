@@ -2,28 +2,41 @@ import { Award, CheckCircle2, ChevronUp, Mail, MapPin, Phone } from "lucide-reac
 import { useEffect, useState } from "react";
 
 interface FooterProps {
+  // personalizar el mensaje de WhatsApp
   currentDistrict?: string;
+  // abrir un modal de ubicación.
   onOpenLocationModal?: () => void;
 }
 
+/**
+ * Renderiza el pie de página principal de la tienda Achorao Gamer.
+ * Incluye secciones de navegación de soporte, legales, información corporativa, insignias de confianza,
+ * pasarelas de pago admitidas, una barra técnica de estado del sistema (mockup) y dos widgets flotantes:
+ * uno para scroll suave hacia arriba y otro para redirección directa a la API de WhatsApp.
+ */
 export default function Footer({ currentDistrict, onOpenLocationModal }: FooterProps) {
   const [showScroll, setShowScroll] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
+      //// Muestra el botón de "subir" solo si el usuario bajó más de 400px
       setShowScroll(window.scrollY > 400);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
+  // Realiza un desplazamiento (scroll) suave y controlado hacia el extremo superior del documento
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  /**
+   * Construye el mensaje personalizado y abre el chat de WhatsApp corporativo en una nueva pestaña.
+   * Inyecta de forma dinámica el distrito actual si existe; de lo contrario, por defecto asume "Lima".
+   */
   const handleWhatsappOpen = () => {
     const phone = "51942320156";
-    const msg = `Hola Achorao 👋, quiero asesorarme sobre componentes gaming de la web www.achorao.com. Ubicación actual: ${currentDistrict || "Lima"}.`;
+    const msg = `Hola Achorao, quiero asesorarme sobre componentes gaming de la web.  Ubicación actual: ${currentDistrict || "Lima"}.`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank", "noopener");
   };
@@ -32,7 +45,7 @@ export default function Footer({ currentDistrict, onOpenLocationModal }: FooterP
     <footer className="bg-[#0F0F12] border-t border-white/10 text-gray-300 pt-16 selection:bg-blue-600/30 selection:text-white" id="site-footer">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 pb-12 border-b border-white/5 px-4 md:px-8">
         
-        {/* Col 1: Brand Info */}
+        {/* Col 1: Información de Marca e Insignias de Google Reviews */}
         <div className="lg:col-span-2 space-y-4">
           <div className="text-lg font-bold uppercase tracking-tight text-white flex items-center gap-1.5">
             <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white">A</div>
@@ -121,7 +134,7 @@ export default function Footer({ currentDistrict, onOpenLocationModal }: FooterP
         </div>
       </div>
 
-      {/* Payment methods list footer */}
+      {/* Métodos de Pago Habilitados Localmente */}
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 py-8 border-b border-white/5 px-4 md:px-8">
         <div className="text-xs text-gray-500 font-bold uppercase tracking-wider font-mono">
           Métodos de Pago Seguros en Perú
@@ -144,8 +157,8 @@ export default function Footer({ currentDistrict, onOpenLocationModal }: FooterP
           <span className="text-blue-500">🇵🇪</span>
         </p>
       </div>
-
-      {/* Bottom Status Bar matching the mockup exact format */}
+ 
+      {/* BARRA TÉCNICA DE ESTADO (System Status Bar) */}
       <div className="h-10 bg-[#0A0A0B] border-t border-white/10 px-6 sm:px-8 flex items-center justify-between text-[10px] text-gray-500 font-mono mt-4">
         <div className="flex gap-4 sm:gap-6">
           <span>NODE_ENV: <span className="text-blue-400 font-semibold">PROD</span></span>
@@ -160,7 +173,7 @@ export default function Footer({ currentDistrict, onOpenLocationModal }: FooterP
         </div>
       </div>
 
-      {/* Floating Scroll to Top button */}
+      {/* Botón Flotante "Scroll to Top" */}
       {showScroll && (
         <button
           onClick={scrollToTop}
@@ -172,7 +185,7 @@ export default function Footer({ currentDistrict, onOpenLocationModal }: FooterP
         </button>
       )}
 
-      {/* Floating WhatsApp fab element toggle bubble */}
+      {/* Botón Flotante de WhatsApp Permanente para Atención Inmediata */}
       <button
         onClick={handleWhatsappOpen}
         className="fixed bottom-6 right-6 sm:right-8 bg-emerald-500 hover:bg-emerald-400 text-black rounded-full p-4 shadow-2xl transition-all z-45 flex items-center justify-center border border-emerald-400"

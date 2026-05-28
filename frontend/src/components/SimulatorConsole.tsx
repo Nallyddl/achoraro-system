@@ -2,7 +2,7 @@ import { AlertTriangle, Cpu, Gamepad2, Gauge, Loader2, Send, ShoppingCart, Spark
 import { useEffect, useState } from "react";
 import { Product, SimulationResult } from "../types";
 
-// Pricing lookup mapping for standard simulator products
+// Mapeo de precios para productos de simuladores estándar
 const COMPONENT_PRICES: { [key: string]: number } = {
   "AMD Ryzen 5 5600X": 720.0,
   "AMD Ryzen 7 5700X": 950.0,
@@ -44,11 +44,11 @@ const COMPONENT_PRICES: { [key: string]: number } = {
 };
 
 const COMPONENT_IMAGES: { [key: string]: string } = {
-  cpu: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
-  gpu: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?auto=format&fit=crop&w=400&q=85",
-  placa: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=85",
-  ram: "https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?auto=format&fit=crop&w=400&q=85",
-  storage: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
+  cpu: "https://es.digitaltrends.com/tachyon/sites/13/2021/04/procesador-01.jpg?resize=720%2C480",
+  gpu: "https://cdn.mos.cms.futurecdn.net/R6zbNW4EyUFXHdD4Laq8tb.jpg",
+  placa: "https://img.pccomponentes.com/pcblog/1736809200000/que-es-una-placa-base-tipos-instalar-2.jpg",
+  ram: "https://plazavea.vteximg.com.br/arquivos/ids/28684475-418-418/imageUrl_1.jpg",
+  storage: "https://plazavea.vteximg.com.br/arquivos/ids/19540267-418-418/imageUrl_2.jpg",
 };
 
 const CPU_RECOMMENDATIONS: { [key: string]: string } = {
@@ -124,13 +124,13 @@ export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps)
 
   const [validationError, setValidationError] = useState("");
 
-  // Custom components details
+  // Componentes personalizados para CPU/GPU 
   const [customCpu, setCustomCpu] = useState("");
   const [customGpu, setCustomGpu] = useState("");
   const [useCustomCpu, setUseCustomCpu] = useState(false);
   const [useCustomGpu, setUseCustomGpu] = useState(false);
 
-  // Auto-set upgrade recommendations when current selections change
+  // Upgrade personalizado para Placa/RAM/Storage
   const handleCurrentCpuChange = (val: string) => {
     setCurrentCpu(val);
     if (!val) {
@@ -197,7 +197,7 @@ export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps)
     }
   };
 
-  // States
+  // Simulación de rendimiento y análisis de upgrade
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
@@ -207,9 +207,9 @@ export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps)
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  // Populate first time calculation on mount
+  // Framework de bienvenida inicial al cargar el componente
   useEffect(() => {
-    // Welcome message showing current setup details
+    // Mensaje de bienvenida inicial al cargar el componente
     setChatHistory([
       {
         sender: "assistant",
@@ -222,7 +222,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
     ]);
   }, []);
 
-  // Sync handler to match Target PC with current PC components
+  // Función para clonar la configuración actual a la sección de objetivo con un solo clic
   const handleCloneCurrentToTarget = () => {
     const activeCpu = useCustomCpu ? customCpu || "AMD Ryzen 5 5600X" : currentCpu;
     const activeGpu = useCustomGpu ? customGpu || "NVIDIA GeForce RTX 3060" : currentGpu;
@@ -273,12 +273,12 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
     }
   };
 
-  // Submit dynamic question to Gemini AI
+  // Función para enviar preguntas al asistente de IA y obtener respuestas contextuales basadas en la simulación actual
   const handleSendAiMessage = async (textToSend?: string) => {
     const query = textToSend || currentQuestion;
     if (!query.trim() || !simulation) return;
 
-    // Add user question to history
+    // Agregar el mensaje del usuario al historial de chat
     const userMsg: Message = { sender: "user", text: query };
     setChatHistory((prev) => [...prev, userMsg]);
     setCurrentQuestion("");
@@ -321,12 +321,12 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
     }
   };
 
-  // Quick preset pills handler
+  // Función para manejar clics en preguntas rápidas predefinidas y enviar esas preguntas al asistente de IA
   const handleQuickQuestionClick = (q: string) => {
     handleSendAiMessage(q);
   };
 
-  // Add Target CPU/GPU/Placa/RAM/Storage parts respectively to shopping cart
+  // Función para agregar componentes de upgrade al carrito de compras, con lógica para manejar cada tipo de componente y su precio correspondiente
   const handleAddTargetToCart = (type: "cpu" | "gpu" | "placa" | "ram" | "storage" | "all") => {
     if ((type === "cpu" || type === "all") && targetCpu) {
       const price = COMPONENT_PRICES[targetCpu] || 890.0;
@@ -826,7 +826,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
             </div>
           </div>
 
-          {/* Validation Message display if any components unselected */}
+          {/*Validacion de Componentes */}
           {validationError && (
             <div className="flex items-center gap-2 p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold animate-in fade-in duration-200">
               <AlertTriangle size={15} className="text-red-400 shrink-0" />
@@ -862,12 +862,12 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
           </div>
         </div>
 
-        {/* Live Simulator feedback results */}
+        {/* Resultados de la Simulación */}
         <div className="space-y-6">
           {simulation ? (
             <div className="bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6 animate-in fade-in duration-300 font-sans">
               
-              {/* Target PC Cart Integrations Panel */}
+              {/* Panel de Integración con el Carrito de Compras */}
               <div className="bg-gradient-to-r from-blue-900/15 via-black/40 to-blue-900/5 border border-blue-500/15 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-left space-y-1">
                   <span className="text-[10px] text-blue-400 font-black tracking-widest uppercase font-mono">ADQUISICIÓN DE UPGRADE</span>
@@ -922,7 +922,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* Dynamic performance lift score indicator */}
+              {/* Indicador de mejora de rendimiento */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/5 pb-4 font-sans">
                 <div className="text-center sm:text-left">
                   <span className="text-xs text-blue-400 font-bold uppercase tracking-wider font-mono">LIFT DE DESEMPEÑO SINTÉTICO</span>
@@ -948,7 +948,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* FPS projection in Games (Fortnite, Valorant, Cyberpunk 2077) */}
+              {/* FPS Projection in Games */}
               <div className="space-y-4">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-400 font-mono">
                   <Gamepad2 size={16} />
@@ -985,7 +985,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                             </div>
                           </div>
 
-                          {/* Ultra settings progress comparison */}
+                          {/* Comparación de Configuraciones */}
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px] text-gray-400 font-medium font-sans">
                               <span>Gráficos Ultra (Calidad)</span>
@@ -1011,7 +1011,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* Energy recommendation and power estimates */}
+              {/* Energia Recomendada */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                 <div className="sm:col-span-12 md:col-span-7 bg-black/30 border border-white/5 rounded-2xl p-4 flex gap-3 items-start">
                   <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
@@ -1040,7 +1040,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* Highly interactive graphical AI Consultation chat messenger board */}
+              {/* Asistente de IA */}
               <div className="border-t border-white/10 pt-6 space-y-4 font-sans text-left">
                 <div className="flex gap-2 items-center">
                   <div className="p-1.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-500/10">
@@ -1052,7 +1052,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   </div>
                 </div>
 
-                {/* AI Chat History Box */}
+                {/* Historial de Chat */}
                 <div className="bg-[#0A0A0B] border border-white/5 rounded-2xl p-4 max-h-[380px] overflow-y-auto space-y-4">
                   {chatHistory.map((m, idx) => (
                     <div key={idx} className={`flex items-start gap-3 ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -1097,7 +1097,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   )}
                 </div>
 
-                {/* Popular Pills Recommendations Tag Box */}
+                {/* Sugerencias Recomendadas */}
                 <div className="space-y-1.5">
                   <span className="text-[9px] text-gray-500 font-black tracking-widest font-mono uppercase block">Sugerencias recomendadas:</span>
                   <div className="flex flex-wrap gap-2">
@@ -1119,7 +1119,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   </div>
                 </div>
 
-                {/* Question Input Container */}
+                {/* Input de Pregunta */}
                 <div className="flex gap-2">
                   <input
                     type="text"

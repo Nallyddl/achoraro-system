@@ -2,6 +2,10 @@ import { MapPin, X } from "lucide-react";
 import { useState } from "react";
 import { DistrictInfo } from "../types";
 
+/**
+ * Diccionario estático que mapea las ubicaciones soportadas en Perú con su información de despacho
+ * Contiene costos de envío, tiempos estimados de entrega y métodos de despacho específicos
+ */
 export const PERU_DISTRICTS: { [name: string]: DistrictInfo } = {
   "Ate": { name: "Ate (Tienda principal)", deliveryCost: 0, days: "Hoy mismo / Recojo gratis", methods: ["Recojo", "Envío 99 Minutos"] },
   "Miraflores": { name: "Miraflores", deliveryCost: 15, days: "Hoy mismo (99 min o es gratis)", methods: ["Envío Express", "Regular"] },
@@ -15,6 +19,9 @@ export const PERU_DISTRICTS: { [name: string]: DistrictInfo } = {
   "Provincias (Shalom)": { name: "Provincias (Shalom / Olva Courier)", deliveryCost: 25, days: "2 a 3 días hábiles", methods: ["Agencia Shalom", "Domicilio Olva"] }
 };
 
+/**
+ * Interfaz que define las propiedades requeridas por el componente LocationModal
+ */
 interface LocationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -22,6 +29,13 @@ interface LocationModalProps {
   onSelectDistrict: (name: string) => void;
 }
 
+/**
+ * Componente 'LocationModal'
+ * Renderiza una ventana modal flotante para la selección de ubicación del usuario en Perú.
+ * Actúa como un búfer intermedio: mantiene un estado de selección temporal (`tempDistrict`) y solo actualiza
+ *  el estado global de la aplicación una vez que el usuario presiona el botón "Confirmar Ubicación"
+ * Muestra en tiempo real la cotización y tiempos de envío según la opción seleccionada
+ */
 export default function LocationModal({ isOpen, onClose, selectedDistrict, onSelectDistrict }: LocationModalProps) {
   const [tempDistrict, setTempDistrict] = useState(selectedDistrict);
 
@@ -34,10 +48,10 @@ export default function LocationModal({ isOpen, onClose, selectedDistrict, onSel
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {/* Backdrop (Fondo oscuro difuminado) */}
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose}></div>
 
-      {/* Main Panel */}
+      {/* Contenedor del Panel del Modal */}
       <div className="relative w-full max-w-md bg-[#0F0F12] border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-10 text-white animate-in fade-in zoom-in duration-200">
         <button
           onClick={onClose}

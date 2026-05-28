@@ -2,15 +2,28 @@ import { CreditCard, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { CartItem } from "../types";
 
+/**
+ * Interfaz que define las propiedades del componente CartDrawer
+ */
 interface CartDrawerProps {
+  // determina si el carrito está visible o no.
   isOpen: boolean;
   onClose: () => void;
+  // listado de productos actualmente agregados al carrito
   cartItems: CartItem[];
+  // actualizar la cantidad de un producto
   onUpdateQty: (productId: string, delta: number) => void;
+  // eliminar por completo un producto del carrito
   onRemoveItem: (productId: string) => void;
+  //vaciar todos los elementos del carrito
   onClearCart: () => void;
 }
 
+/**
+ * Componente CartDrawer 
+ * Renderiza el desglose de productos, cálculo de totales (con opción de comisión por tarjeta)
+ * y simula el proceso de finalización de compra (Checkout)
+ */
 export default function CartDrawer({
   isOpen,
   onClose,
@@ -19,16 +32,23 @@ export default function CartDrawer({
   onRemoveItem,
   onClearCart,
 }: CartDrawerProps) {
+  // estado para saber si el usuario pagará con tarjeta (Aplicar comision)
   const [payWithCard, setPayWithCard] = useState(false);
+  // estado de la animación de éxito al procesar el pedido
   const [isCheckedOut, setIsCheckedOut] = useState(false);
-
+  
+  // Si el carrito no está abierto, no renderizamos nada
   if (!isOpen) return null;
 
-  // Totals calculations
+  // Calculos totales
   const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const cardFee = payWithCard ? subtotal * 0.05 : 0;
   const total = subtotal + cardFee;
 
+  /**
+   * Maneja la simulación de la compra/cotización.
+   * Muestra la pantalla de éxito durante 3 segundos antes de limpiar el carrito y cerrar el panel.
+   */
   const handleCheckout = () => {
     setIsCheckedOut(true);
     setTimeout(() => {
@@ -41,7 +61,7 @@ export default function CartDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
+      {/* Permite cerrar el carrito al hacer clic fuera del panel principal. */}
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose}></div>
 
       {/* Panel */}
@@ -59,7 +79,7 @@ export default function CartDrawer({
           </button>
         </div>
 
-        {/* List of items */}
+        {/* Listado de productos */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {isCheckedOut ? (
             <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
@@ -140,7 +160,7 @@ export default function CartDrawer({
           )}
         </div>
 
-        {/* Footer actions */}
+        {/* Sección de acciones y desglose de precios */}
         {cartItems.length > 0 && !isCheckedOut && (
           <div className="p-6 border-t border-white/5 bg-[#0A0A0B] space-y-4">
             {/* Custom Payment fee switcher */}
@@ -162,7 +182,7 @@ export default function CartDrawer({
               </label>
             </div>
 
-            {/* Price lines */}
+            {/* Desglose de precios finales */}
             <div className="text-sm space-y-2 px-1">
               <div className="flex justify-between">
                 <span className="text-gray-400">Subtotal:</span>

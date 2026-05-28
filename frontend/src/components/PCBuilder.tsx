@@ -15,34 +15,34 @@ interface PredefinedComponent {
   platform?: "intel" | "amd" | "all";
 }
 
-// Predefined components catalog with exact images, prices, and stats
+// Catálogo de componentes predefinidos con imágenes, precios y estadísticas exactas.
 const DEF_CPUS: { intel: PredefinedComponent[]; amd: PredefinedComponent[] } = {
   intel: [
     {
       name: "Intel Core i3-12100",
       price: 450.0,
-      image: "https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=400&q=85",
+      image: "https://i.ebayimg.com/images/g/Ky0AAeSwPZBp2UL0/s-l1600.webp",
       details: "4 Cores, 8 Threads @ 3.3GHz | TDP 60W | LGA1700",
       score: 13800,
     },
     {
       name: "Intel Core i5-12400F",
       price: 680.0,
-      image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
+      image: "https://http2.mlstatic.com/D_NQ_NP_752066-MPE111514623255_052026-O.webp",
       details: "6 Cores, 12 Threads @ 2.5GHz | TDP 65W | LGA1700",
       score: 19500,
     },
     {
       name: "Intel Core i7-13700K",
       price: 1690.0,
-      image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
+      image: "https://www.pakbyte.pk/cdn/shop/files/Intel-Core-I7-13700K-Desktop-Processor-PakByte-Computers-24397643972675.webp?v=1753680611",
       details: "16 Cores, 24 Threads @ 3.4GHz | TDP 125W | LGA1700",
       score: 46500,
     },
     {
       name: "Intel Core i9-14900K",
       price: 2590.0,
-      image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
+      image: "https://compuvisionperu.pe/public/img/productos/d90q5gUm0WR0ZC9lid6XCYpej1rhhCbACSr8yCkpY1gy4gZd9W0CufgTXO15QT6TmnRaq2GFtn3oJTHJ.jpg",
       details: "24 Cores, 32 Threads @ 3.2GHz | TDP 125W | LGA1700",
       score: 60800,
     },
@@ -291,6 +291,10 @@ const DEF_CASES: PredefinedComponent[] = [
   },
 ];
 
+/**
+ * Interfaz que define la estructura de un componente personalizado
+ * añadido manualmente por el usuario
+ */
 interface CustomComponent {
   id: string;
   category: string;
@@ -298,6 +302,9 @@ interface CustomComponent {
   price: number;
 }
 
+/**
+ * Interfaz que define las propiedades del componente ArmaTuPC
+ */
 export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
   // Navigation Steps:
   // 1: Platform (Intel vs AMD)
@@ -312,8 +319,8 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
   // 10: Resumen Final y Envío al Carrito
   const [step, setStep] = useState<number>(1);
   const [platform, setPlatform] = useState<"intel" | "amd">("intel");
-
-  // Selection states
+ 
+  // Estados de Componentes Predefinidos
   const [selectedCpu, setSelectedCpu] = useState<PredefinedComponent | null>(null);
   const [selectedMotherboard, setSelectedMotherboard] = useState<PredefinedComponent | null>(null);
   const [selectedRam, setSelectedRam] = useState<PredefinedComponent | null>(null);
@@ -323,10 +330,10 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
   const [selectedCooling, setSelectedCooling] = useState<PredefinedComponent | null>(null);
   const [selectedCase, setSelectedCase] = useState<PredefinedComponent | null>(null);
 
-  // Custom components list
+  // Estado para componentes personalizados añadidos por el usuario
   const [customComponents, setCustomComponents] = useState<CustomComponent[]>([]);
 
-  // Form State for custom components
+  // Estados para el formulario de añadir componente personalizado
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [customCategory, setCustomCategory] = useState("SSD / Almacenamiento");
   const [customName, setCustomName] = useState("");
@@ -334,7 +341,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
 
   const handlePlatformSelect = (plat: "intel" | "amd") => {
     setPlatform(plat);
-    // Reset CPU & Motherboard choices if platform shifts to prevent incompatible choices
+    // Resetear selecciones al cambiar de plataforma para evitar incompatibilidades
     setSelectedCpu(null);
     setSelectedMotherboard(null);
     setStep(2);
@@ -363,7 +370,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
     setCustomComponents(customComponents.filter((c) => c.id !== id));
   };
 
-  // Convert categories to icon helper
+  // Función para obtener el ícono correspondiente a la categoría del componente personalizado
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "SSD / Almacenamiento":
@@ -377,7 +384,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
     }
   };
 
-  // Total accumulation
+  // Cálculo del subtotal sumando los precios de los componentes seleccionados y los personalizados
   const subtotal =
     (selectedCpu?.price || 0) +
     (selectedMotherboard?.price || 0) +
@@ -389,7 +396,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
     (selectedCase?.price || 0) +
     customComponents.reduce((sum, item) => sum + item.price, 0);
 
-  // Add individual to cart
+  // Función para añadir un componente individual al carrito 
   const addSingleToCart = (comp: PredefinedComponent, vendor: string) => {
     const prod: Product = {
       id: `pcbuild-${vendor.toLowerCase().replace(/\s+/g, "-")}-${comp.name.replace(/\s+/g, "-").toLowerCase()}`,
@@ -402,7 +409,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
     onAddToCart(prod);
   };
 
-  // Add entire custom assembly to cart
+  // Función para añadir toda la configuración personalizada al carrito
   const addEntireBuildToCart = () => {
     // Collect all selected components
     const itemsToAdd: { comp: PredefinedComponent | CustomComponent; vendor: string }[] = [];
@@ -416,7 +423,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
     if (selectedCooling) itemsToAdd.push({ comp: selectedCooling, vendor: "Enfriamiento" });
     if (selectedCase) itemsToAdd.push({ comp: selectedCase, vendor: "Gabinete / Case" });
 
-    // Custom components loop
+    // Añadir componentes personalizados al listado de productos a agregar al carrito
     customComponents.forEach((c) => {
       itemsToAdd.push({
         comp: {
@@ -458,7 +465,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
         </p>
       </div>
 
-      {/* Progress Bars Indicator of steps */}
+      {/* Pasos de procesos de construcción */}
       <div className="hidden lg:flex justify-between items-center max-w-5xl mx-auto border border-white/5 bg-[#0F0F12]/80 p-3 rounded-2xl text-[10px] sm:text-xs font-semibold uppercase text-gray-500 gap-1 overflow-x-auto">
         {[
           { num: 1, label: "Plat." },
@@ -503,7 +510,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
         ))}
       </div>
 
-      {/* Main Grid Content Area split (Options on left, Live spec summary list on right) */}
+      {/* Contenido Principal */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Side: Step View Panels */}
         <div className="lg:col-span-8 bg-[#0F0F12] border border-white/10 rounded-3xl p-6 min-h-[460px] flex flex-col justify-between">
@@ -524,7 +531,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
               </h3>
             </div>
 
-            {/* Render Views based on step index */}
+            {/* Vista de selección de plataforma */}
             {step === 1 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                 {/* Intel Card Selection Button */}
@@ -1059,7 +1066,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
             )}
           </div>
 
-          {/* Bottom control buttons */}
+          {/* Botones de Control Inferior */}
           <div className="flex justify-between items-center border-t border-white/5 pt-4 mt-6">
             <button
               onClick={() => setStep(Math.max(1, step - 1))}
@@ -1081,7 +1088,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
           </div>
         </div>
 
-        {/* Right Side: Quick Build Invoice Specs Breakdown on fly */}
+        {/* Resumen de Especificaciones */}
         <div className="lg:col-span-4 bg-[#0F0F12]/80 border border-white/10 rounded-3xl p-6 space-y-6">
           <div className="border-b border-white/5 pb-3">
             <h4 className="text-sm font-bold uppercase text-white tracking-wider flex items-center gap-1.5">
@@ -1101,7 +1108,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
               </span>
             </div>
 
-            {/* Config Lines */}
+            {/* Componentes Seleccionados */}
             <div className="space-y-3 divide-y divide-white/5">
               {/* CPU Line */}
               <div className="flex justify-between items-start pt-1 font-sans">
@@ -1272,7 +1279,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
               </div>
             </div>
 
-            {/* Additional Custom Items display */}
+            {/* Componentes Adicionales */}
             {customComponents.length > 0 && (
               <div className="space-y-2.5 divide-y divide-white/5 pt-2 border-t border-white/10">
                 <span className="text-[9px] text-gray-500 font-extrabold uppercase font-mono tracking-wider block">Componentes Adicionales</span>
@@ -1286,7 +1293,7 @@ export default function ArmaTuPC({ onAddToCart }: ArmaTuPCProps) {
             )}
           </div>
 
-          {/* Subtotal line summary */}
+          {/* Resumen de Totales */}
           <div className="pt-4 border-t border-white/10 space-y-2">
             <div className="flex justify-between items-baseline">
               <span className="text-xs text-gray-400">Total Acumulado:</span>

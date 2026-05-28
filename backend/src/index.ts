@@ -2,11 +2,16 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import express, { Router } from "express";
 
+// Carga las variables de entorno desde el archivo .env
 dotenv.config();
 
 export const router = Router();
 
-// Known benchmarks (PassMark database fallback) for Scraper Simulator
+/**
+ * Base de datos en memoria (Mocks)
+ * Se utilizan como respaldo por si el Scraper falla [para tener datos de prueba]
+ * Puntajes de rendimiento (PassMark), detalles tecnicos y consumo (TDP)
+ * */
 export const CPU_BENCHMARKS: { [key: string]: { score: number; details: string; tdp: string } } = {
   "AMD Ryzen 5 5600X": { score: 21900, details: "6 Cores, 12 Threads @ 3.7GHz", tdp: "65W" },
   "AMD Ryzen 7 5700X": { score: 26700, details: "8 Cores, 16 Threads @ 3.4GHz", tdp: "65W" },
@@ -32,8 +37,13 @@ export const GPU_BENCHMARKS: { [key: string]: { score: number; details: string; 
   "NVIDIA GTX 1060": { score: 10200, details: "Classic Pascal graphics card", tdp: "120W", vram: "6GB" }
 };
 
-// Lazy initialization of Gemini client to satisfy api-key safety
+// Varaible global para almacenar la instancia del cliente Gemini (singleton)
 let aiClient: GoogleGenAI | null = null;
+
+/**
+ * Inicializa y retorna el cliente Gemini de forma "lenta" (Lazy Initialization)
+ * Solo se crea la instancia si esta no existe y si la API key es valdia
+ */
 function getGeminiClient(): GoogleGenAI | null {
   if (!aiClient) {
     const key = process.env.GEMINI_API_KEY;
@@ -51,12 +61,19 @@ function getGeminiClient(): GoogleGenAI | null {
   return aiClient;
 }
 
-// Support endpoints
+/**
+ * Endpoint de salud (Health check)
+ * Valida y monitorea el estado del servidor
+ */
 router.get("/health", (req, res) => {
   res.json({ status: "ok", service: "Achorao Backend" });
 });
 
-// 1. PassMark Scraper API Simulator
+/**
+ * 1. Simulador de Scraper de PassMark
+ * Busca el componente (CPU o GPU) en la base de datos local
+ * Si no se encuentra, simula el puntaje con un valor aleatorio 
+ */
 router.get("/simulator/passmark", (req: any, res: any) => {
   const { name, type } = req.query;
   if (!name) {
@@ -66,11 +83,12 @@ router.get("/simulator/passmark", (req: any, res: any) => {
   const queryStr = String(name).trim();
   const componentType = String(type).toLowerCase();
 
-  // Perform Scraper Simulation (match name directly or find best match)
+  // Busca una coincidencia parcial en la base de datos local
   if (componentType === "cpu") {
     const matchedKey = Object.keys(CPU_BENCHMARKS).find(
       (k) => k.toLowerCase().includes(queryStr.toLowerCase()) || queryStr.toLowerCase().includes(k.toLowerCase())
     );
+    //Si encuentra la CP, retona los datos exactos
     if (matchedKey) {
       return res.json({
         found: true,
@@ -83,7 +101,7 @@ router.get("/simulator/passmark", (req: any, res: any) => {
       });
     }
 
-    // Dynamic extraction logic for custom typed components (Scraper fallback)
+    // Si no encuentra el CPU, genera un resultado simulado con un puntaje aleatorio
     const randomScore = Math.floor(15000 + Math.random() * 25000);
     return res.json({
       found: true,
@@ -95,6 +113,7 @@ router.get("/simulator/passmark", (req: any, res: any) => {
       vram: "N/A"
     });
   } else {
+    // Misma logica, pero enfocada a GPUs
     const matchedKey = Object.keys(GPU_BENCHMARKS).find(
       (k) => k.toLowerCase().includes(queryStr.toLowerCase()) || queryStr.toLowerCase().includes(k.toLowerCase())
     );
@@ -109,7 +128,7 @@ router.get("/simulator/passmark", (req: any, res: any) => {
         vram: GPU_BENCHMARKS[matchedKey].vram
       });
     }
-
+    // Si no encuentra la GPU, genera un resultado simulado 
     const randomScore = Math.floor(8000 + Math.random() * 22000);
     return res.json({
       found: true,
@@ -123,14 +142,18 @@ router.get("/simulator/passmark", (req: any, res: any) => {
   }
 });
 
-// 2. Performance Analysis and FPS Calculation Simulator
+/**
+ * 2. Simulador de Cálculo de Rendimiento y FPS
+ * Recibe setup actual y setups objetivo del usuario
+ * Calcula rendimiento, estima FPS en varios juegos y detecta cuellos de botella
+ */
 router.post("/simulator/calculate", (req: any, res: any) => {
   const { 
     currentCpu, currentGpu, currentPlaca, currentRam, currentStorage,
     targetCpu, targetGpu, targetPlaca, targetRam, targetStorage 
   } = req.body;
 
-  // Retrieve scores for core components
+  // Obtiene los puntajes base, si el componente no existe, se le asigna uno por defecto
   const cCpuMatch = CPU_BENCHMARKS[currentCpu] || { score: 15000 };
   const cGpuMatch = GPU_BENCHMARKS[currentGpu] || { score: 12000 };
   const tCpuMatch = CPU_BENCHMARKS[targetCpu] || { score: 30000 };
@@ -141,7 +164,7 @@ router.post("/simulator/calculate", (req: any, res: any) => {
   const tCpuScore = tCpuMatch.score;
   const tGpuScore = tGpuMatch.score;
 
-  // Helper values for Mobo, RAM and SSD (Peru customized pricing/ratings lookup)
+  // Diccionarios locales, con puntajes arbitrarios para placa, RAM y almacenamiento
   const RAM_SCORES: { [key: string]: number } = {
     "8GB (1x8GB) DDR4 2666MHz": 500,
     "16GB (2x8GB) DDR4 3200MHz": 1200,
@@ -166,6 +189,7 @@ router.post("/simulator/calculate", (req: any, res: any) => {
     "ASUS ROG STRIX X670E-F Gaming AM5": 2200,
   };
 
+  // Asigancion de puntahes secundarios para placa, RAM y almacenamiento (si no se encuentran, se les asigna un valor por defecto)
   const cPlacaScore = MOBO_SCORES[currentPlaca] || 800;
   const tPlacaScore = MOBO_SCORES[targetPlaca] || 1200;
   const cRamScore = RAM_SCORES[currentRam] || 1200;
@@ -173,12 +197,17 @@ router.post("/simulator/calculate", (req: any, res: any) => {
   const cStorageScore = STORAGE_SCORES[currentStorage] || 800;
   const tStorageScore = STORAGE_SCORES[targetStorage] || 1600;
 
-  // FPS formulas based on CPU/GPU Marks with slight RAM/Storage speed multipliers
+  /**
+   * Funcion interna para calcular FPS
+   * Usa formulas matematicas basadas en la relación entre CPU, GPU
+   *  segun la velocidad de cada componente (RAM y almacenamiento)
+   */
   const calculateFps = (cpuScore: number, gpuScore: number, ramScore: number, storageScore: number, factor: number) => {
     const ramMultiplier = 0.9 + (ramScore / 10000); // DDR5 dual channel provides 5-10% FPS boosts
     const storageMultiplier = 0.95 + (storageScore / 15000); // SSDs reduce asset streaming stutters
     const speedCoeff = ramMultiplier * storageMultiplier * factor;
 
+    // Calculo bruto y limitacion de FPS
     const rawFpsLow = ((cpuScore * 0.003) + (gpuScore * 0.005)) * speedCoeff;
     const rawFpsUltra = ((cpuScore * 0.001) + (gpuScore * 0.003)) * speedCoeff * 0.6;
     return {
@@ -187,6 +216,7 @@ router.post("/simulator/calculate", (req: any, res: any) => {
     };
   };
 
+  // Estimacion de FPS para el equipo actual y el equipo objetivo en varios juegos
   const currentFps = {
     "Fortnite Battle Royale": calculateFps(cCpuScore, cGpuScore, cRamScore, cStorageScore, 1.2),
     "Valorant": calculateFps(cCpuScore, cGpuScore, cRamScore, cStorageScore, 1.6), // Highly CPU bound
@@ -201,12 +231,12 @@ router.post("/simulator/calculate", (req: any, res: any) => {
     "Call of Duty: Warzone": calculateFps(tCpuScore, tGpuScore, tRamScore, tStorageScore, 1.0)
   };
 
-  // Synthetic Combined Lift Calculation (CPU + GPU + Placa + RAM + SSD)
+  // Calculo del porcentaje de mejora general comporado con la suma de los componentes
   const currentTotal = cCpuScore + cGpuScore + cPlacaScore + cRamScore + cStorageScore;
   const targetTotal = tCpuScore + tGpuScore + tPlacaScore + tRamScore + tStorageScore;
   const liftPercentage = Math.round(((targetTotal - currentTotal) / currentTotal) * 100);
 
-  // Simple Offline Bottleneck logic enhanced with Mobo and RAM mismatch safety
+  // Logica dura, para detectar cuellos de botella 
   let bottleneck = "Configuración balanceada y fluida con repotenciación integral.";
   if (cCpuScore / cGpuScore > 1.8) {
     bottleneck = "Cuello de botella en Gráficos (GPU Bottleneck). Tu procesador es de altísimo nivel, pero la tarjeta de video actual limita drásticamente la tasa de FPS.";
@@ -216,7 +246,7 @@ router.post("/simulator/calculate", (req: any, res: any) => {
     bottleneck = "Advertencia: Tienes un Procesador Ryzen de Gama Alta emparejado con solo 8GB de RAM. Esto causará stutters y mermas graves de rendimiento general.";
   }
 
-  // TDP calculations
+  // Extraccion de numeros de TDP para calcular el consumo total estimado del sistema
   const extractTdpNum = (tdpStr: string) => parseInt(tdpStr?.replace(/\D/g, "") || "150");
   const estimatedPowerUsage = extractTdpNum((tCpuMatch as any).tdp || "100W") + extractTdpNum((tGpuMatch as any).tdp || "200W") + 120; // +120W buffer for other parts
 
@@ -233,7 +263,11 @@ router.post("/simulator/calculate", (req: any, res: any) => {
   });
 });
 
-// 3. AI Bottleneck Counselor (Optional Gemini Intelligence support)
+/**
+ * 3. Simulador de Reporte de Upgrade con IA (Gemini)
+ * Usa IA generativa para dar un analisis personalizado del upgrade
+ * Retorna una respuesta offline si no hat API key configurada
+ */
 router.post("/simulator/ai-report", async (req: any, res: any) => {
   const { 
     currentCpu, currentGpu, currentPlaca, currentRam, currentStorage,
@@ -244,7 +278,7 @@ router.post("/simulator/ai-report", async (req: any, res: any) => {
   try {
     const ai = getGeminiClient();
     if (!ai) {
-      // Deterministic Offline recommendation if No Key configured yet (short and concise)
+      // Respuesta offline predefinida[si no hay API key]
       const report = `### ⚡ Reporte Rápido (Soporte Achorao Offline)
 
 - **Mejora Estimada:** Aproximadamente **+${lift}%** más rápido globalmente.
@@ -278,10 +312,10 @@ Mejora general estimada: +${lift}% (Consumo: ${scores?.powerRequirementWatts || 
 REGLAS CRÍTICAS DE RESPUESTA:
 - Responde de forma ultra puntual, resumida y directa (máximo 60 palabras totales). Sin introducciones ni saludos.
 - Estructura únicamente con estas 4 viñetas ultra cortas (1 frase directa cada una de máximo 10 palabras):
-  * 🚀 **Rendimiento:** (frase rápida del upgrade)
-  * ⚠️ **Mermas:** (cuello de botella o desequilibrio)
-  * 🔌 **Fuente:** (watts mínimos sugeridos)
-  * ⚙️ **Tip:** (consejo preciso)
+  * **Rendimiento:** (frase rápida del upgrade)
+  * **Mermas:** (cuello de botella o desequilibrio)
+  * **Fuente:** (watts mínimos sugeridos)
+  * **Tip:** (consejo preciso)
 - Jamás menciones "Gemini", "API", "modelo" o "IA".`;
     }
 
