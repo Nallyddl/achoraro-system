@@ -1,8 +1,8 @@
-import { AlertTriangle, Cpu, Gamepad2, Gauge, Loader2, Send, ShoppingCart, Sparkles, User, Zap } from "lucide-react";
+import { AlertTriangle, ChevronDown, Cpu, Gamepad2, Gauge, Loader2, Send, ShoppingCart, Sparkles, User, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Product, SimulationResult } from "../types";
 
-// Mapeo de precios para productos de simuladores estándar
+// Pricing lookup mapping for standard simulator products
 const COMPONENT_PRICES: { [key: string]: number } = {
   "AMD Ryzen 5 5600X": 720.0,
   "AMD Ryzen 7 5700X": 950.0,
@@ -44,11 +44,11 @@ const COMPONENT_PRICES: { [key: string]: number } = {
 };
 
 const COMPONENT_IMAGES: { [key: string]: string } = {
-  cpu: "https://es.digitaltrends.com/tachyon/sites/13/2021/04/procesador-01.jpg?resize=720%2C480",
-  gpu: "https://cdn.mos.cms.futurecdn.net/R6zbNW4EyUFXHdD4Laq8tb.jpg",
-  placa: "https://img.pccomponentes.com/pcblog/1736809200000/que-es-una-placa-base-tipos-instalar-2.jpg",
-  ram: "https://plazavea.vteximg.com.br/arquivos/ids/28684475-418-418/imageUrl_1.jpg",
-  storage: "https://plazavea.vteximg.com.br/arquivos/ids/19540267-418-418/imageUrl_2.jpg",
+  cpu: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
+  gpu: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?auto=format&fit=crop&w=400&q=85",
+  placa: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=85",
+  ram: "https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?auto=format&fit=crop&w=400&q=85",
+  storage: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=400&q=85",
 };
 
 const CPU_RECOMMENDATIONS: { [key: string]: string } = {
@@ -100,6 +100,209 @@ const STORAGE_RECOMMENDATIONS: { [key: string]: string } = {
   "Corsair MP600 Pro 2TB NVMe PCIe 4.0": "Corsair MP600 Pro 2TB NVMe PCIe 4.0"
 };
 
+// Map CPU to Traffic Light status matching user's transcription
+export const getCpuStatus = (cpuName: string) => {
+  if (!cpuName) {
+    return {
+      color: "gray",
+      label: "Por evaluar",
+      recomendacion: "Selecciona tu procesador actual para visualizar el estado en el semáforo.",
+      bg: "bg-white/5",
+      border: "border-white/10",
+      text: "text-gray-400",
+      dot: "bg-gray-500",
+    };
+  }
+
+  const name = cpuName.toLowerCase();
+
+  // Rojo: Core 2, Pentium, Celeron antiguos
+  if (
+    name.includes("core 2") ||
+    name.includes("pentium") ||
+    name.includes("celeron") ||
+    name.includes("antiguo") ||
+    name.includes("antigua") ||
+    name.includes("duo") ||
+    name.includes("quad") ||
+    name.includes("athlon") ||
+    name.includes("phenom")
+  ) {
+    return {
+      color: "red",
+      label: "Es hora de cambiar",
+      recomendacion: "Recomendada plataforma nueva entera (placa madre + memoria RAM + procesador CPU).",
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
+      text: "text-red-400",
+      dot: "bg-red-500",
+    };
+  }
+
+  // Verde: Intel Core i7/i9 10ª–14ª gen · Ryzen 7/9 5000X3D/7000
+  if (
+    ((name.includes("i7") || name.includes("i9")) &&
+     (name.includes("10ª") || name.includes("11ª") || name.includes("12ª") || name.includes("13ª") || name.includes("14ª") ||
+      name.includes("10th") || name.includes("11th") || name.includes("12th") || name.includes("13th") || name.includes("14th") ||
+      /-1[01234]\d/.test(name) || /-2\d/.test(name))) ||
+    (name.includes("ryzen 7") && (name.includes("x3d") || name.includes("7800") || name.includes("7700") || name.includes("9700"))) ||
+    (name.includes("ryzen 9") && (name.includes("7900") || name.includes("7950") || name.includes("5000x3d") || name.includes("9900") || name.includes("9950")))
+  ) {
+    return {
+      color: "green",
+      label: "No hace falta",
+      recomendacion: "Mantén tu procesador y prioriza mejorar la tarjeta de video (GPU) o la memoria RAM.",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+      text: "text-emerald-400",
+      dot: "bg-emerald-500",
+    };
+  }
+
+  // Naranja: Intel Core i3/i5 6ª–9ª · Ryzen 1ª–2ª
+  if (
+    (name.includes("i3") && (name.includes("6ª") || name.includes("7ª") || name.includes("8ª") || name.includes("9ª") ||
+                             name.includes("6th") || name.includes("7th") || name.includes("8th") || name.includes("9th") ||
+                             /-[6789]\d{3}/.test(name))) ||
+    (name.includes("i5") && (name.includes("6ª") || name.includes("7ª") || name.includes("8ª") || name.includes("9ª") ||
+                             name.includes("6th") || name.includes("7th") || name.includes("8th") || name.includes("9th") ||
+                             /-[6789]\d{3}/.test(name))) ||
+    (name.includes("i7") && (name.includes("6ª") || name.includes("7ª") || name.includes("6th") || name.includes("7th") ||
+                             /-[234567]\d{3}/.test(name))) ||
+    (name.includes("ryzen") && (name.includes("1000") || name.includes("2000") || /ryzen\s+[357]\s+[12]\d{3}/.test(name)))
+  ) {
+    return {
+      color: "orange",
+      label: "Cámbialo si puedes",
+      recomendacion: "Notarás un notable cuello de botella si colocas tarjetas de video más modernas.",
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/20",
+      text: "text-orange-400",
+      dot: "bg-orange-500",
+    };
+  }
+
+  // Amarillo: Intel Core i5 10ª–13ª · Ryzen 5/7 3000–5000
+  return {
+    color: "yellow",
+    label: "Mantener 1–3 años",
+    recomendacion: "Aún rinde de forma regular; considera upgrade principalmente si trabajas en render o edición pesada.",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    text: "text-amber-400",
+    dot: "bg-amber-500",
+  };
+};
+
+// Map GPU to Traffic Light status matching user's transcription
+export const getGpuStatus = (gpuName: string) => {
+  if (!gpuName) {
+    return {
+      color: "gray",
+      label: "Por evaluar",
+      recomendacion: "Selecciona tu tarjeta gráfica actual para visualizar el estado en el semáforo.",
+      bg: "bg-white/5",
+      border: "border-white/10",
+      text: "text-gray-400",
+      dot: "bg-gray-500",
+    };
+  }
+
+  const name = gpuName.toLowerCase();
+
+  // Rojo: GTX 1050 Ti o menores · RX 570 o anteriores
+  if (
+    name.includes("1050") ||
+    name.includes("570") ||
+    name.includes("580") ||
+    name.includes("560") ||
+    name.includes("550") ||
+    name.includes("470") ||
+    name.includes("480") ||
+    name.includes("1030") ||
+    name.includes("750") ||
+    name.includes("960") ||
+    name.includes("970") ||
+    name.includes("950") ||
+    name.includes("gtx 9") ||
+    name.includes("gtx 7") ||
+    name.includes("gtx 6") ||
+    name.includes("gtx 1060") ||
+    name.includes("r7") ||
+    name.includes("r9") ||
+    name.includes("hd ") ||
+    name.includes("anterior") ||
+    name.includes("anteriores") ||
+    name.includes("integrada") ||
+    name.includes("graphics") ||
+    name.includes("igpu")
+  ) {
+    return {
+      color: "red",
+      label: "Actualízala cuanto antes",
+      recomendacion: "Recomendado actualizar a serie actual para tener tecnologías vigentes (DLSS/FSR, RT).",
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
+      text: "text-red-400",
+      dot: "bg-red-500",
+    };
+  }
+
+  // Verde: RTX 4070/4080/4090 · RX 7900XT/XTX (plus SUPER / Ti variants)
+  if (
+    name.includes("4070") ||
+    name.includes("4080") ||
+    name.includes("4090") ||
+    name.includes("7900") ||
+    name.includes("xtx") ||
+    name.includes("3090") ||
+    name.includes("3085") ||
+    name.includes("7800 xt")
+  ) {
+    return {
+      color: "green",
+      label: "No hace falta",
+      recomendacion: "Lista para disfrutar gaming fluido en 1440p o 4K; primero mejora el monitor o la CPU si lo necesitas.",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+      text: "text-emerald-400",
+      dot: "bg-emerald-500",
+    };
+  }
+
+  // Amarillo: RTX 3080/3070 · RX 6800/6700XT
+  if (
+    name.includes("3080") ||
+    name.includes("3070") ||
+    name.includes("6800") ||
+    name.includes("6700") ||
+    name.includes("3060 ti") ||
+    name.includes("4060 ti") ||
+    name.includes("7700")
+  ) {
+    return {
+      color: "yellow",
+      label: "Conserva 1–2 años",
+      recomendacion: "Aún rinden de forma sólida en 1080p y 1440p; evalúa el cambio solo si buscas Ray Tracing ultra.",
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20",
+      text: "text-amber-400",
+      dot: "bg-amber-500",
+    };
+  }
+
+  // Naranja: RTX 3060/3050 · GTX 1660/1650 · RX 6600/6500XT
+  return {
+    color: "orange",
+    label: "Conserva 2–4 años",
+    recomendacion: "Excelente para calidad competitiva media (1080p); upgrade sugerido si buscas trazado de rayos activo.",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/20",
+    text: "text-orange-400",
+    dot: "bg-orange-500",
+  };
+};
+
 interface SimulatorConsoleProps {
   onAddToCart: (product: Product) => void;
 }
@@ -124,13 +327,39 @@ export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps)
 
   const [validationError, setValidationError] = useState("");
 
-  // Componentes personalizados para CPU/GPU 
+  // Sync state to localStorage when values change
+  useEffect(() => {
+    try {
+      localStorage.setItem("ach_currentCpu", currentCpu);
+      localStorage.setItem("ach_currentGpu", currentGpu);
+      localStorage.setItem("ach_currentPlaca", currentPlaca);
+      localStorage.setItem("ach_currentRam", currentRam);
+      localStorage.setItem("ach_currentStorage", currentStorage);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [currentCpu, currentGpu, currentPlaca, currentRam, currentStorage]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ach_targetCpu", targetCpu);
+      localStorage.setItem("ach_targetGpu", targetGpu);
+      localStorage.setItem("ach_targetPlaca", targetPlaca);
+      localStorage.setItem("ach_targetRam", targetRam);
+      localStorage.setItem("ach_targetStorage", targetStorage);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [targetCpu, targetGpu, targetPlaca, targetRam, targetStorage]);
+
+  // Custom components details
   const [customCpu, setCustomCpu] = useState("");
   const [customGpu, setCustomGpu] = useState("");
   const [useCustomCpu, setUseCustomCpu] = useState(false);
   const [useCustomGpu, setUseCustomGpu] = useState(false);
+  const [showTrafficGuide, setShowTrafficGuide] = useState(false);
 
-  // Upgrade personalizado para Placa/RAM/Storage
+  // Auto-set upgrade recommendations when current selections change
   const handleCurrentCpuChange = (val: string) => {
     setCurrentCpu(val);
     if (!val) {
@@ -197,7 +426,7 @@ export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps)
     }
   };
 
-  // Simulación de rendimiento y análisis de upgrade
+  // States
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
@@ -207,9 +436,9 @@ export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps)
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiError, setAiError] = useState("");
 
-  // Framework de bienvenida inicial al cargar el componente
+  // Populate first time calculation on mount
   useEffect(() => {
-    // Mensaje de bienvenida inicial al cargar el componente
+    // Welcome message showing current setup details
     setChatHistory([
       {
         sender: "assistant",
@@ -222,7 +451,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
     ]);
   }, []);
 
-  // Función para clonar la configuración actual a la sección de objetivo con un solo clic
+  // Sync handler to match Target PC with current PC components
   const handleCloneCurrentToTarget = () => {
     const activeCpu = useCustomCpu ? customCpu || "AMD Ryzen 5 5600X" : currentCpu;
     const activeGpu = useCustomGpu ? customGpu || "NVIDIA GeForce RTX 3060" : currentGpu;
@@ -273,12 +502,12 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
     }
   };
 
-  // Función para enviar preguntas al asistente de IA y obtener respuestas contextuales basadas en la simulación actual
+  // Submit dynamic question to Gemini AI
   const handleSendAiMessage = async (textToSend?: string) => {
     const query = textToSend || currentQuestion;
     if (!query.trim() || !simulation) return;
 
-    // Agregar el mensaje del usuario al historial de chat
+    // Add user question to history
     const userMsg: Message = { sender: "user", text: query };
     setChatHistory((prev) => [...prev, userMsg]);
     setCurrentQuestion("");
@@ -321,12 +550,12 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
     }
   };
 
-  // Función para manejar clics en preguntas rápidas predefinidas y enviar esas preguntas al asistente de IA
+  // Quick preset pills handler
   const handleQuickQuestionClick = (q: string) => {
     handleSendAiMessage(q);
   };
 
-  // Función para agregar componentes de upgrade al carrito de compras, con lógica para manejar cada tipo de componente y su precio correspondiente
+  // Add Target CPU/GPU/Placa/RAM/Storage parts respectively to shopping cart
   const handleAddTargetToCart = (type: "cpu" | "gpu" | "placa" | "ram" | "storage" | "all") => {
     if ((type === "cpu" || type === "all") && targetCpu) {
       const price = COMPONENT_PRICES[targetCpu] || 890.0;
@@ -522,6 +751,214 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
             </button>
           </div>
 
+          {/* GUÍA RÁPIDA PARA DECIDIR TU UPGRADE (Semaforo Accordion) */}
+          <div className="bg-[#050506] border border-white/5 rounded-2xl overflow-hidden transition-all duration-350">
+            <button
+              type="button"
+              onClick={() => setShowTrafficGuide(!showTrafficGuide)}
+              className="w-full flex items-center justify-between p-4 bg-[#0A0A0B]/60 hover:bg-white/5 transition-all cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <span className="text-xl animate-pulse">🚦</span>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 font-mono block">RECURSIVO DE APOYO</span>
+                  <h4 className="text-xs font-black text-gray-200">Guía Rápida para Decidir tu Upgrade (Semáforo)</h4>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                <span className="text-[9px] font-bold uppercase hidden sm:inline">
+                  {showTrafficGuide ? "Ocultar Guía" : "Ver Guía Completa"}
+                </span>
+                <div className={`p-1 bg-white/5 rounded border border-white/10 transition-transform duration-300 ${showTrafficGuide ? "rotate-180" : ""}`}>
+                  <ChevronDown size={12} />
+                </div>
+              </div>
+            </button>
+
+            {showTrafficGuide && (
+              <div className="p-5 border-t border-white/5 space-y-6 text-xs text-gray-300 animate-in slide-in-from-top-4 duration-300">
+                
+                {/* Intro status list */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/40 p-3 rounded-xl border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] shrink-0 shadow-sm shadow-emerald-500/50"></span>
+                    <span className="font-bold text-[11px] text-gray-205">🟢 No hace falta</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shrink-0 shadow-sm shadow-amber-500/50"></span>
+                    <span className="font-bold text-[11px] text-gray-205">🟡 Mantener 1–3 años</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#F97316] shrink-0 shadow-sm shadow-orange-500/50"></span>
+                    <span className="font-bold text-[11px] text-gray-205">🟠 Cámbialo si puedes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444] shrink-0 shadow-sm shadow-red-500/50"></span>
+                    <span className="font-bold text-[11px] text-gray-205">🔴 Es hora de cambiar</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* CPU Upgrade Guide Table */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 border-b border-white/5 pb-2">
+                      <span className="text-sm">💻</span>
+                      <h4 className="font-black text-gray-100 uppercase tracking-wider text-xs">¿Debo mejorar mi procesador?</h4>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {/* Verde row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-emerald-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-sm shadow-emerald-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-emerald-400">Verde (No hace falta)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          Intel Core i7/i9 10ª–14ª gen · Ryzen 7/9 5000X3D/7000
+                        </p>
+                        <p className="text-[10px] text-gray-400 italic font-semibold">
+                          ➔ Recomendación: Mantén y prioriza GPU/RAM.
+                        </p>
+                      </div>
+
+                      {/* Amarillo row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-amber-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#F59E0B] shadow-sm shadow-amber-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-amber-400">Amarillo (Mantener 1–3 años)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          Intel Core i5 10ª–13ª · Ryzen 5/7 3000–5000
+                        </p>
+                        <p className="text-[10px] text-gray-400 italic font-semibold">
+                          ➔ Recomendación: Aún rinde; considera upgrade si haces edición/render.
+                        </p>
+                      </div>
+
+                      {/* Naranja row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-orange-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#F97316] shadow-sm shadow-orange-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-orange-400">Naranja (Cámbialo si puedes)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          Intel Core i3/i5 6ª–9ª · Ryzen 1ª–2ª
+                        </p>
+                        <p className="text-[10px] text-gray-400 italic font-semibold">
+                          ➔ Recomendación: Notarás cuello de botella con GPUs nuevas.
+                        </p>
+                      </div>
+
+                      {/* Rojo row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-red-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#EF4444] shadow-sm shadow-red-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-red-400">Rojo (Es hora de cambiar)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          Core 2 / Pentium / Celeron antiguos
+                        </p>
+                        <p className="text-[10px] text-gray-400 italic font-semibold">
+                          ➔ Recomendación: Recomendada plataforma nueva (placa + RAM + CPU).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-2">
+                      <span className="text-xs mt-0.5">💡</span>
+                      <p className="text-[10.5px] text-blue-300 font-semibold leading-relaxed">
+                        <strong className="text-white">Tip Achorao:</strong> para ofimática y navegación pesada, prioriza pasar de 8 a 16 GB RAM y un SSD NVMe PCIe fast.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* GPU Upgrade Guide Table */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 border-b border-white/5 pb-2">
+                      <span className="text-sm">🎮</span>
+                      <h4 className="font-black text-gray-100 uppercase tracking-wider text-xs">¿Debo mejorar mi tarjeta gráfica?</h4>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {/* Verde row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-emerald-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#10B981] shadow-sm shadow-emerald-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-emerald-400">Verde (No hace falta)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          RTX 4070/4080/4090 · RX 7900XT/XTX
+                        </p>
+                        <p className="text-[10px] text-gray-440 italic font-semibold">
+                          ➔ Recomendación: Listas para 1440p–4K; primero mejora monitor/CPU si hace falta.
+                        </p>
+                      </div>
+
+                      {/* Amarillo row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-amber-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#F59E0B] shadow-sm shadow-amber-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-amber-400">Amarillo (Conserva 1–2 años)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          RTX 3080/3070 · RX 6800/6700XT
+                        </p>
+                        <p className="text-[10px] text-gray-440 italic font-semibold">
+                          ➔ Recomendación: Aún sólidos en 1080p/1440p; evalúa salto si quieres RT/4K.
+                        </p>
+                      </div>
+
+                      {/* Naranja row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-orange-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#F97316] shadow-sm shadow-orange-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-orange-400">Naranja (Conserva 2–4 años)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          RTX 3060/3050 · GTX 1660/1650 · RX 6600/6500XT
+                        </p>
+                        <p className="text-[10px] text-gray-440 italic font-semibold">
+                          ➔ Recomendación: Bien para 1080p medio; upgrade si buscas alto/RT.
+                        </p>
+                      </div>
+
+                      {/* Rojo row */}
+                      <div className="p-3 bg-black/30 border border-white/5 rounded-xl hover:border-red-500/10 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full bg-[#EF4444] shadow-sm shadow-red-500/50"></span>
+                          <span className="text-[10px] font-black uppercase text-red-400">Rojo (Actualízala cuanto antes)</span>
+                        </div>
+                        <p className="text-[10.5px] font-bold text-gray-200 mb-1 leading-snug">
+                          GTX 1050 Ti o menores · RX 570 o anteriores
+                        </p>
+                        <p className="text-[10px] text-gray-440 italic font-semibold">
+                          ➔ Recomendación: Recomendado actualizar a serie actual (DLSS/FSR, RT).
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-[#10B981]/5 border border-[#10B981]/15 rounded-xl flex items-start gap-2">
+                      <span className="text-xs mt-0.5">💡</span>
+                      <p className="text-[10.5px] text-emerald-400 font-semibold leading-relaxed">
+                        <strong className="text-white">Tip Achorao:</strong> para 1080p competitivo, prioriza &ge; 120 FPS; para RT/creación, busca 12-16 GB VRAM.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footnote matching user's transcription completely */}
+                <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[10px] text-gray-500 font-medium leading-relaxed">
+                  <p className="flex-1">
+                    * Referencial y orientativo. Tu caso real puede variar por juegos, drivers, resoluciones y estado de tu equipo.
+                  </p>
+                  <p className="text-emerald-400 font-bold shrink-0 bg-emerald-500/5 border border-emerald-500/10 px-2.5 py-1 rounded-lg">
+                    Para una recomendación exacta usa el Simulador Achorao y la pestaña de productividad.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Current PC details (Left side) */}
             <div className="space-y-4">
@@ -565,6 +1002,29 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                     ))}
                   </select>
                 )}
+
+                {/* Real-time CPU status traffic-light indicator */}
+                {(() => {
+                  const cpuVal = useCustomCpu ? customCpu : currentCpu;
+                  const cpuStatus = getCpuStatus(cpuVal);
+                  if (!cpuVal) return null;
+                  return (
+                    <div className={`mt-2 p-2.5 rounded-xl border ${cpuStatus.bg} ${cpuStatus.border} flex items-start gap-2.5 transition-all animate-in fade-in duration-350`}>
+                      <span className={`w-2.5 h-2.5 rounded-full ${cpuStatus.dot} mt-1 shrink-0 shadow-lg shadow-${cpuStatus.color}-500/50 animate-pulse`} />
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${cpuStatus.text}`}>
+                            {cpuStatus.label}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-bold">• Semáforo CPU</span>
+                        </div>
+                        <p className="text-[10px] text-gray-300 leading-normal font-semibold">
+                          {cpuStatus.recomendacion}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* GPU selection */}
@@ -603,6 +1063,29 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                     ))}
                   </select>
                 )}
+
+                {/* Real-time GPU status traffic-light indicator */}
+                {(() => {
+                  const gpuVal = useCustomGpu ? customGpu : currentGpu;
+                  const gpuStatus = getGpuStatus(gpuVal);
+                  if (!gpuVal) return null;
+                  return (
+                    <div className={`mt-2 p-2.5 rounded-xl border ${gpuStatus.bg} ${gpuStatus.border} flex items-start gap-2.5 transition-all animate-in fade-in duration-350`}>
+                      <span className={`w-2.5 h-2.5 rounded-full ${gpuStatus.dot} mt-1 shrink-0 shadow-lg shadow-${gpuStatus.color}-500/50 animate-pulse`} />
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${gpuStatus.text}`}>
+                            {gpuStatus.label}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-bold">• Semáforo GPU</span>
+                        </div>
+                        <p className="text-[10px] text-gray-300 leading-normal font-semibold">
+                          {gpuStatus.recomendacion}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Placa Madre selection */}
@@ -826,7 +1309,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
             </div>
           </div>
 
-          {/*Validacion de Componentes */}
+          {/* Validation Message display if any components unselected */}
           {validationError && (
             <div className="flex items-center gap-2 p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs font-semibold animate-in fade-in duration-200">
               <AlertTriangle size={15} className="text-red-400 shrink-0" />
@@ -862,12 +1345,12 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
           </div>
         </div>
 
-        {/* Resultados de la Simulación */}
+        {/* Live Simulator feedback results */}
         <div className="space-y-6">
           {simulation ? (
             <div className="bg-[#0F0F12] border border-white/10 rounded-3xl p-6 space-y-6 animate-in fade-in duration-300 font-sans">
               
-              {/* Panel de Integración con el Carrito de Compras */}
+              {/* Target PC Cart Integrations Panel */}
               <div className="bg-gradient-to-r from-blue-900/15 via-black/40 to-blue-900/5 border border-blue-500/15 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-left space-y-1">
                   <span className="text-[10px] text-blue-400 font-black tracking-widest uppercase font-mono">ADQUISICIÓN DE UPGRADE</span>
@@ -922,7 +1405,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* Indicador de mejora de rendimiento */}
+              {/* Dynamic performance lift score indicator */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/5 pb-4 font-sans">
                 <div className="text-center sm:text-left">
                   <span className="text-xs text-blue-400 font-bold uppercase tracking-wider font-mono">LIFT DE DESEMPEÑO SINTÉTICO</span>
@@ -948,7 +1431,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* FPS Projection in Games */}
+              {/* FPS projection in Games (Fortnite, Valorant, Cyberpunk 2077) */}
               <div className="space-y-4">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-400 font-mono">
                   <Gamepad2 size={16} />
@@ -985,7 +1468,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                             </div>
                           </div>
 
-                          {/* Comparación de Configuraciones */}
+                          {/* Ultra settings progress comparison */}
                           <div className="space-y-1">
                             <div className="flex justify-between text-[11px] text-gray-400 font-medium font-sans">
                               <span>Gráficos Ultra (Calidad)</span>
@@ -1011,7 +1494,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* Energia Recomendada */}
+              {/* Energy recommendation and power estimates */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                 <div className="sm:col-span-12 md:col-span-7 bg-black/30 border border-white/5 rounded-2xl p-4 flex gap-3 items-start">
                   <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
@@ -1040,7 +1523,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                 </div>
               </div>
 
-              {/* Asistente de IA */}
+              {/* Highly interactive graphical AI Consultation chat messenger board */}
               <div className="border-t border-white/10 pt-6 space-y-4 font-sans text-left">
                 <div className="flex gap-2 items-center">
                   <div className="p-1.5 rounded-full bg-blue-600/10 text-blue-400 border border-blue-500/10">
@@ -1052,7 +1535,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   </div>
                 </div>
 
-                {/* Historial de Chat */}
+                {/* AI Chat History Box */}
                 <div className="bg-[#0A0A0B] border border-white/5 rounded-2xl p-4 max-h-[380px] overflow-y-auto space-y-4">
                   {chatHistory.map((m, idx) => (
                     <div key={idx} className={`flex items-start gap-3 ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -1097,7 +1580,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   )}
                 </div>
 
-                {/* Sugerencias Recomendadas */}
+                {/* Popular Pills Recommendations Tag Box */}
                 <div className="space-y-1.5">
                   <span className="text-[9px] text-gray-500 font-black tracking-widest font-mono uppercase block">Sugerencias recomendadas:</span>
                   <div className="flex flex-wrap gap-2">
@@ -1119,7 +1602,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   </div>
                 </div>
 
-                {/* Input de Pregunta */}
+                {/* Question Input Container */}
                 <div className="flex gap-2">
                   <input
                     type="text"
