@@ -1,9 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import express, { Router } from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// Carga las variables de entorno desde el archivo .env
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 export const router = Router();
 
@@ -320,7 +324,7 @@ REGLAS CRÍTICAS DE RESPUESTA:
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
     });
 
@@ -333,12 +337,21 @@ REGLAS CRÍTICAS DE RESPUESTA:
 });
 
 // Optional standalone listener if run directly (useful for local development)
-if (process.argv[1] === new URL(import.meta.url).pathname) {
-  const app = express();
-  app.use(express.json());
-  app.use("/api", router);
-  const BACK_PORT = process.env.BACKEND_PORT || 4000;
-  app.listen(Number(BACK_PORT), "0.0.0.0", () => {
+const app = express();
+
+// Middlewares globales requeridos para procesar JSON
+app.use(express.json());
+
+// Montamos todas tus rutas del simulador e IA bajo el prefijo /api
+app.use("/api", router);
+
+// Una ruta raíz para validar visualmente en el navegador o Postman
+app.get("/", (_req, res) => {
+    res.send("Backend de Achorao System funcionando correctamente.");
+});
+
+// El puerto dinámico que usará tu contenedor
+const BACK_PORT = process.env.BACKEND_PORT || 4000;
+app.listen(Number(BACK_PORT), "0.0.0.0", () => {
     console.log(`Backend server running on port ${BACK_PORT}`);
-  });
-}
+});

@@ -2,12 +2,12 @@ import dotenv from "dotenv";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { router as apiRouter } from "../backend/src/index.js";
+import { router as apiRouter } from "../backend/src/index.ts";
 
 dotenv.config();
 
 const app = express();
-const PORT =5000;
+const PORT =3000;
 
 app.use(express.json());
 
