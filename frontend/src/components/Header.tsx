@@ -110,6 +110,12 @@ export default function Header({
           >
             Simular Setup / Upgrade
           </button>
+          <button
+            onClick={() => setSelectedTab("security")}
+            className={`transition-colors py-1 flex items-center gap-1.5 cursor-pointer ${selectedTab === "security" ? "text-emerald-400 font-semibold border-b-2 border-emerald-500" : "hover:text-white"}`}
+          >
+          Auditoría SMART & NIST
+          </button>
         </nav>
 
         {/* Search, Location, and Cart Options */}
@@ -209,6 +215,15 @@ export default function Header({
                 className={`text-left py-2 font-black cursor-pointer ${selectedTab === "simulator" ? "text-blue-400" : "text-gray-300 hover:text-white"}`}
               >
                 Simular Setup / Upgrade
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTab("security");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-left py-2 font-black cursor-pointer ${selectedTab === "security" ? "text-emerald-400" : "text-gray-300 hover:text-white"}`}
+              >
+              Auditoría SMART & NIST
               </button>
             </nav>
 

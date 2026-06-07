@@ -890,108 +890,34 @@ pause >nul
 
               <div className="space-y-4 text-left">
                 <div className="space-y-4 text-left animate-in fade-in duration-200">
-                  <div className="p-3 bg-blue-600/5 rounded-2xl border border-blue-500/10 text-[11px] text-gray-300 space-y-2 leading-relaxed">
-                    <span className="font-bold text-white block uppercase text-[10px] tracking-wide">💡 Arquitectura Híbrida Real</span>
-                    <p>
-                      El navegador web (sandbox) <strong>no puede acceder</strong> al hardware físico por seguridad. Achorao recomienda usar un agente nativo liviano como <strong>smartmontools (smartctl)</strong> o llamadas Win32 <strong>DeviceIoControl</strong> para leer la telemetría del firmware y firmarlo criptográficamente.
-                    </p>
-                  </div>
-
+                
                   {/* Scripts Copy Area Selector */}
                   <div className="space-y-3">
                     <span className="text-[10px] text-gray-500 font-bold uppercase block font-mono">Recursos del Agente Local Achorao:</span>
 
                     <div className="space-y-4 text-left">
-                      {/* 🔥 SECCIÓN DE DESCARGA DIRECTA DE 1-CLIC */}
+                      {/* SECCIÓN DE DESCARGA DIRECTA DE 1-CLIC */}
                       <div className="bg-gradient-to-br from-emerald-950/40 to-blue-950/30 p-5 rounded-2xl border border-[#10B981]/25 space-y-4">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex flex-col  md:items-center justify-between gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded font-mono uppercase tracking-widest animate-pulse border border-emerald-500/10">RECOMENDADO</span>
-                              <span className="text-white text-xs font-extrabold uppercase font-mono tracking-wider">⚡ AGENTE AUTOMÁTICO DE 1-CLIC</span>
+                              <span className="text-white text-xs font-extrabold uppercase font-mono tracking-wider">AGENTE AUTOMÁTICO</span>
                             </div>
-                            <p className="text-[11.5px] text-zinc-300 leading-relaxed max-w-xl font-medium">
-                              ¿Quieres extraer el hardware real de tu PC sin complicaciones? Descarga nuestro script de Windows <code className="text-[#10B981] font-bold">.bat</code> limpio y optimizado. Funciona al instante con un simple doble clic y sin requerir instalación alguna.
+                            <p className="text-[11.5px] text-zinc-300 leading-relaxed max-w-xl font-medium whitespace-pre-line">
+                              ¿Quieres extraer el hardware real de tu PC sin complicaciones? <br></br>
+                              Descarga nuestro script de Windows <code className="text-[#10B981] font-bold">.bat</code> limpio y optimizado. Funciona al instante con un simple doble clic y sin requerir instalación alguna.
                             </p>
                           </div>
-
                           <button
                             type="button"
                             onClick={handleDownloadBat}
                             className="h-11 px-6 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-500/15 flex items-center justify-center gap-2 shrink-0 transform hover:scale-[1.02]"
                           >
-                            <span>⬇️ DESCARGAR AGENTE .BAT</span>
+                            <span> DESCARGAR AGENTE .BAT</span>
                           </button>
                         </div>
-
-                        <div className="pt-2.5 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] leading-relaxed">
-                          <div className="bg-black/25 p-2.5 rounded-xl border border-white/5 space-y-1">
-                            <strong className="text-zinc-200 block text-[10.5px]">🛡️ Totalmente Seguro:</strong>
-                            <span className="text-zinc-400 text-[10px] block">Los archivos <code className="text-zinc-300 font-mono">.bat</code> son legibles y abribles en bloc de notas. Windows los ejecuta de inmediato sin falsos positivos de antivirus.</span>
-                          </div>
-                          <div className="bg-black/25 p-2.5 rounded-xl border border-white/5 space-y-1">
-                            <strong className="text-zinc-200 block text-[10.5px]">🔌 Sincro Directa:</strong>
-                            <span className="text-zinc-400 text-[10px] block">Al abrirlo, el agente consulta la interfaz física de tu disco por WMI y envía el resultado de inmediato al backend. ¡Tu página refresca automáticamente!</span>
-                          </div>
-                          <div className="bg-black/25 p-2.5 rounded-xl border border-white/5 space-y-1">
-                            <strong className="text-zinc-200 block text-[10.5px]">🌐 API Endpoint Integrado:</strong>
-                            <span className="text-emerald-400 text-[9.5px] block font-mono font-bold select-all break-all">{activeApiUrl}</span>
-                          </div>
-                        </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Drag-&-drop Import File / Paste Area */}
-                  <div className="space-y-2 pt-2 border-t border-white/5">
-                    <label className="text-[10px] text-blue-400 font-bold uppercase block">Importar de Portapapeles (Pegar JSON aquí):</label>
-                    <textarea
-                      placeholder='Pega el JSON aquí (Ej: {"diskName": "Mi SSD Kingston", "hours": 4120, "writtenTB": 21.4, ...})'
-                      value={customReportPaste}
-                      onChange={(e) => setCustomReportPaste(e.target.value)}
-                      className="w-full h-24 bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-gray-300 focus:outline-none focus:border-emerald-500 font-mono placeholder:text-gray-600 scrollbar-thin resize-none"
-                    />
-                    
-                    {importError && (
-                      <span className="text-[10px] text-red-400 font-medium block leading-snug">{importError}</span>
-                    )}
-
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const demoJson = `{
-  "serialNumber": "ACH-REAL-99218-X",
-  "diskName": "SSD Kingston KC3000 NVMe M.2 1TB",
-  "type": "SSD",
-  "capacity": "1024 GB",
-  "interface": "NVMe",
-  "healthScore": 98,
-  "grade": "A",
-  "hours": 3720,
-  "wear": 2,
-  "temp": 39,
-  "sectors": 0,
-  "writtenTB": 14.82,
-  "generatedAt": "2026-06-05T23:45:00Z",
-  "signature": "SIG_RSA2048_PKCS1_SHA256_V101_882910_APPROVED_POWERSHELL",
-  "hash": "8f2b7d27e7f6e7c10b4845edb5bde8b99c8f001ca7d85ea15250c609c2bd7f81"
-}`;
-                          setCustomReportPaste(demoJson);
-                          handleImportNativeReport(demoJson);
-                        }}
-                        className="flex-1 h-9 bg-zinc-800 hover:bg-zinc-700 text-white font-bold rounded-lg text-[9.5px] uppercase tracking-wider cursor-pointer"
-                      >
-                        Pegar Reporte Demo
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => handleImportNativeReport(customReportPaste)}
-                        className="flex-1 h-9 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[9.5px] uppercase tracking-wider cursor-pointer"
-                      >
-                        Cargar e Integrar
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -1001,7 +927,7 @@ pause >nul
             {/* Legal / ProInnóvate info banner */}
             <div className="bg-[#10B981]/5 border border-[#10B981]/15 p-5 rounded-3xl space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-base text-emerald-400">💡</span>
+                <span className="text-base text-emerald-400"></span>
                 <span className="text-xs font-black text-white uppercase tracking-wider">Cumplimiento del Estándar</span>
               </div>
               <p className="text-[11px] text-gray-300 leading-relaxed font-medium">
