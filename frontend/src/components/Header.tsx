@@ -106,15 +106,15 @@ export default function Header({
           </button>
           <button
             onClick={() => setSelectedTab("simulator")}
-            className={`transition-colors py-1 flex items-center gap-1 cursor-pointer ${selectedTab === "simulator" ? "text-blue-400 font-semibold border-b-2 border-blue-500" : "hover:text-white"}`}
+            className={`transition-colors py-1 flex items-center gap-1.5 cursor-pointer ${selectedTab === "simulator" ? "text-blue-400 font-semibold border-b-2 border-blue-500" : "hover:text-white"}`}
           >
-            Simular Setup / Upgrade
+            <i className="bi bi-cpu text-blue-400"></i> Simular Setup / Upgrade
           </button>
           <button
             onClick={() => setSelectedTab("security")}
             className={`transition-colors py-1 flex items-center gap-1.5 cursor-pointer ${selectedTab === "security" ? "text-emerald-400 font-semibold border-b-2 border-emerald-500" : "hover:text-white"}`}
           >
-          Auditoría SMART & NIST
+            <i className="bi bi-shield-check text-emerald-400"></i> Auditoría SMART & NIST
           </button>
         </nav>
 
@@ -212,18 +212,18 @@ export default function Header({
                   setSelectedTab("simulator");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`text-left py-2 font-black cursor-pointer ${selectedTab === "simulator" ? "text-blue-400" : "text-gray-300 hover:text-white"}`}
+                className={`text-left py-2 font-black cursor-pointer flex items-center gap-1.5 ${selectedTab === "simulator" ? "text-blue-400" : "text-gray-300 hover:text-white"}`}
               >
-                Simular Setup / Upgrade
+                <i className="bi bi-cpu text-blue-400"></i> Simular Setup / Upgrade
               </button>
               <button
                 onClick={() => {
                   setSelectedTab("security");
                   setIsMobileMenuOpen(false);
                 }}
-                className={`text-left py-2 font-black cursor-pointer ${selectedTab === "security" ? "text-emerald-400" : "text-gray-300 hover:text-white"}`}
+                className={`text-left py-2 font-black cursor-pointer flex items-center gap-1.5 ${selectedTab === "security" ? "text-emerald-400" : "text-gray-300 hover:text-white"}`}
               >
-              Auditoría SMART & NIST
+                <i className="bi bi-shield-check text-emerald-400"></i> Auditoría SMART & NIST
               </button>
             </nav>
 

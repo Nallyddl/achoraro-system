@@ -149,156 +149,6 @@ const SAMPLE_LIFECYCLE_DB: { [serial: string]: DeviceLifecycle } = {
   }
 };
 
-const getPowershellScript = (apiUrl: string) => `try {
-    $physicalDisk = Get-PhysicalDisk |
-        Where-Object MediaType -in @("SSD", "HDD") |
-        Select-Object -First 1
-
-    if (-not $physicalDisk) {
-        $physicalDisk = Get-PhysicalDisk | Select-Object -First 1
-    }
-
-    if (-not $physicalDisk) {
-         throw "No se encontró ningún disco físico."
-    }
-
-    $reliability = Get-StorageReliabilityCounter -PhysicalDisk $physicalDisk -ErrorAction SilentlyContinue
-
-    $serial = if (![string]::IsNullOrWhiteSpace($physicalDisk.SerialNumber)) {
-        $physicalDisk.SerialNumber.Trim()
-    } else {
-        "UNKNOWN"
-    }
-
-    $diskName = if (![string]::IsNullOrWhiteSpace($physicalDisk.FriendlyName)) {
-        $physicalDisk.FriendlyName.Trim()
-    } else {
-        "Unknown Disk"
-    }
-
-    $hours = if ($reliability -and $reliability.PowerOnHours) {
-        [int]$reliability.PowerOnHours
-    } else {
-        0
-    }
-
-    $temp = if ($reliability -and $reliability.Temperature -gt 0) {
-        [int]$reliability.Temperature
-    } else {
-        $null
-    }
-
-    $wear = if ($reliability -and $null -ne $reliability.Wear) {
-        [int]$reliability.Wear
-    } else {
-        0
-    }
-
-    $sectors = if ($reliability -and $reliability.ReadErrorsTotal) {
-        [int]$reliability.ReadErrorsTotal
-    } else {
-        0
-    }
-
-    $writtenTB = 0
-
-    if ($reliability -and $reliability.CumulativeBytesWritten) {
-        $writtenTB = [Math]::Round(
-            ($reliability.CumulativeBytesWritten / 1TB),
-            2
-        )
-    }
-
-    $capacityGB = [Math]::Round(
-        ($physicalDisk.Size / 1GB),
-        0
-    )
-
-    # SCORE DE SALUD DETERMINÍSTICO ACHORAO
-    $health = 100
-
-    # desgaste SSD (wear)
-    $health -= [Math]::Min($wear, 40)
-
-    # temperatura
-    if ($temp -and $temp -gt 60) {
-        $health -= 15
-    }
-
-    # horas de uso
-    if ($hours -gt 20000) {
-        $health -= 10
-    }
-
-    if ($hours -gt 40000) {
-        $health -= 10
-    }
-
-    # errores
-    if ($sectors -gt 0) {
-        $health -= 25
-    }
-
-    if ($health -lt 0) {
-        $health = 0
-    }
-
-    $grade =
-        if ($health -ge 90) { "A" }
-        elseif ($health -ge 75) { "B" }
-        elseif ($health -ge 60) { "C" }
-        else { "D" }
-
-    $payload =
-        "$serial|$diskName|$hours|$writtenTB|$wear|$temp|$sectors|$health"
-
-    $hash = [BitConverter]::ToString(
-        [System.Security.Cryptography.SHA256]::Create().ComputeHash(
-            [System.Text.Encoding]::UTF8.GetBytes($payload)
-        )
-    ).Replace("-", "").ToLower()
-
-    $reportObj = @{
-        serialNumber = $serial
-        diskName = $diskName
-        type = $physicalDisk.MediaType.ToString()
-        capacity = "$capacityGB GB"
-        interface = $physicalDisk.BusType.ToString()
-
-        healthScore = $health
-        grade = $grade
-
-        hours = $hours
-        wear = $wear
-        temp = $temp
-        sectors = $sectors
-
-        writtenTB = $writtenTB
-
-        generatedAt = (Get-Date).ToString("o")
-
-        signature = "SIG_RSA2048_PKCS1_SHA256_V101_$(Get-Random -Minimum 100000 -Maximum 999999)_APPROVED_POWERSHELL"
-        hash = $hash
-    }
-
-    $json = $reportObj | ConvertTo-Json -Depth 5 -Compress
-    $json
-
-    # ENVIAR REPORTE NATIVO EN DIRECTO AL PORTAL WEB DE AUDITORÍA
-    try {
-        $headers = @{ "Content-Type" = "application/json" }
-        $null = Invoke-RestMethod -Uri "${apiUrl}" -Method Post -Body $json -Headers $headers -TimeoutSec 5 -ErrorAction Stop
-        Write-Host "\`n🎉 [SINC] ¡Reporte enviado y sincronizado con éxito al panel de auditoría web!" -ForegroundColor Green
-    } catch {
-        Write-Warning "Auto-sincronización directa fallida. Por favor copia y pega el JSON de arriba en el cuadro web."
-    }
-}
-catch {
-    @{
-        error = \$_.Exception.Message
-    } | ConvertTo-Json -Compress
-}`;
-
 export default function SecurityTraceability() {
   const activeApiUrl = typeof window !== "undefined" 
     ? `${window.location.protocol}//${window.location.host}/api/smart/report` 
@@ -308,9 +158,6 @@ export default function SecurityTraceability() {
 
   // SMART Tab State
   const [selectedDisk, setSelectedDisk] = useState<DiskModel>(PRESET_DISKS[0]);
-  const [isSmartRunning, setIsSmartRunning] = useState(false);
-  const [smartProgress, setSmartProgress] = useState(0);
-  const [smartLogs, setSmartLogs] = useState<string[]>([]);
   const [smartReport, setSmartReport] = useState<{
     score: number;
     hours: number;
@@ -336,15 +183,10 @@ export default function SecurityTraceability() {
   } | null>(null);
 
   // SMART Native / Local Agent Integration State
-  const [smartMode, setSmartMode] = useState<"preset" | "native">("native");
-  const [customReportPaste, setCustomReportPaste] = useState("");
-  const [importError, setImportError] = useState("");
-
-  const logsContainerRef = useRef<HTMLDivElement>(null);
-
+  const smartMode = "native";
 
   // Real REST API live synchronization properties:
-  const [isLiveSyncActive, setIsLiveSyncActive] = useState(true);
+  const isLiveSyncActive = true;
   const lastImportedIdRef = useRef<string | null>(null);
 
   // Live Auto-Sync engine polling our Express backend API in real time:
@@ -479,7 +321,6 @@ pause >nul
 
   // Handle importing pasted JSON report from local agent
   const handleImportNativeReport = (text: string) => {
-    setImportError("");
     try {
       let jsonStr = text.trim();
       // Regular expression to extract JSON payload if they copied with labels or scripts output logs
@@ -561,20 +402,9 @@ pause >nul
         sigVerified: true
       });
 
-      setSmartLogs([
-        `[Agente SMART Local] Inicializando decodificador de reporte...`,
-        `[AUDITORÍA] Importando reporte firmado criptográficamente de forma exitosa.`,
-        `[INFO] Unidad Detectada: ${data.diskName}`,
-        `[INFO] Capacidad de Almacenamiento: ${data.capacity || "Desconocida"} | Interfaz: ${interStr}`,
-        `[INFO] Total Escrito (TBW): ${randomWritten} TB de ${expectedTBW} nominales estimados.`,
-        `[INFO] Horas de Uso: ${randomHours} h | Desgaste Flash SSD: ${realWear}%`,
-        `[VALIDACIÓN] Firma digital integrada: ${data.signature || "AUTÉNTICO"}`,
-        `[INTEGRIDAD] Verificación exitosa de la firma criptográfica RSA-SHA256 con el hash: ${data.hash || "SHA256-VERIFIED"}`
-      ]);
-
       alert(`¡Reporte SMART real importado con éxito!\nUnidad: ${data.diskName}\nSectores Reasignados: ${badSectorsCount}\nVida Estimada: ${computedScore}%`);
     } catch (err: any) {
-      setImportError(`Error al procesar el reporte: ${err.message || "Asegúrate de copiar el JSON completo."}`);
+      console.error(`Error al procesar el reporte: ${err.message || "Asegúrate de copiar el JSON completo."}`);
     }
   };
 
@@ -601,7 +431,7 @@ pause >nul
 
   // Traceability State
   const [searchSerial, setSearchSerial] = useState("");
-  const [lifecycleDb, setLifecycleDb] = useState<{ [serial: string]: DeviceLifecycle }>(SAMPLE_LIFECYCLE_DB);
+  const lifecycleDb = SAMPLE_LIFECYCLE_DB;
   const [traceResult, setTraceResult] = useState<DeviceLifecycle | null>(null); // Start null so they query or run
   const [traceError, setTraceError] = useState("");
 
@@ -633,7 +463,7 @@ pause >nul
     ) {
       setAuditResult({
         isValid: true,
-        title: "🛡️ INTEGRIDAD VERIFICADA - FIRMA INVIOLABLE OK",
+        title: "INTEGRIDAD VERIFICADA - FIRMA INVIOLABLE OK",
         message: "Verificación de Integridad Completa: Los registros de telemetría correspondientes a este hash coinciden exactamente con la firma asimétrica RSA-4096 de origen. Ningún byte ha sido manipulado tras la firma.",
         deviceName: "Samsung 980 PRO NVMe M.2 1TB",
         timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
@@ -650,7 +480,7 @@ pause >nul
     if (matchFromDb) {
       setAuditResult({
         isValid: true,
-        title: "🛡️ INTEGRO Y CERTIFICADO - REGISTRO LEDGER",
+        title: "INTEGRO Y CERTIFICADO - REGISTRO LEDGER",
         message: `Este reporte está verificado y certificado de forma segura en el ledger público de Achorao. El registro histórico es consistente con la telemetría del disco físico.`,
         deviceName: matchFromDb.model,
         timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
@@ -662,7 +492,7 @@ pause >nul
     // Otherwise, simulate a mismatch error
     setAuditResult({
       isValid: false,
-      title: "❌ FALLO DE INTEGRIDAD - ALERTA DE ALTERACIÓN",
+      title: "FALLO DE INTEGRIDAD - ALERTA DE ALTERACIÓN",
       message: "Atención: La firma digital del reporte o el Checksum Hash de telemetría no coinciden con ningún registro con firma válida. Se ha detectado un intento de eludir el diagnóstico SMART.",
       deviceName: "Dispositivo No Verificado / No Registrado",
       timestamp: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC",
@@ -810,7 +640,7 @@ pause >nul
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🛡️</span>
+              <span className="text-2xl text-emerald-405"><i className="bi bi-shield-fill-check"></i></span>
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/10 px-2 py-0.5 rounded-md">
                 Módulo Ciberseguridad & Trazabilidad
               </span>
@@ -927,10 +757,10 @@ pause >nul
             {/* Legal / ProInnóvate info banner */}
             <div className="bg-[#10B981]/5 border border-[#10B981]/15 p-5 rounded-3xl space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-base text-emerald-400"></span>
+                <span className="text-base text-emerald-400"><i className="bi bi-lightbulb-fill"></i></span>
                 <span className="text-xs font-black text-white uppercase tracking-wider">Cumplimiento del Estándar</span>
               </div>
-              <p className="text-[11px] text-gray-300 leading-relaxed font-medium">
+              <p className="text-[11px] text-gray-300 leading-relaxed font-semibold">
                 El Agente SMART de Achorao recopila telemetría de firmware y sectores flash sin vulnerar tus datos. Es ideal para corroborar el estado físico de PCs entregadas para el buy-back, detectando si la pieza fue estresada bajo minado intensivo de criptomonedas o sobrecalentamiento.
               </p>
             </div>
@@ -985,7 +815,7 @@ pause >nul
                     }}
                     className="h-10 px-6 bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-[10.5px] font-black uppercase tracking-wider rounded-xl transition duration-200 cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-900/5 select-none"
                   >
-                    <span>💡 Ver Reporte de Hardware Real (Demo de Muestra)</span>
+                    <span className="flex items-center gap-1.5"><i className="bi bi-lightbulb-fill"></i> Ver Reporte de Hardware Real (Demo de Muestra)</span>
                   </button>
                 </div>
               </div>
@@ -1284,7 +1114,7 @@ pause >nul
                   ))
                 )}
                 {isNistRunning && (
-                  <div className="flex gap-2 items-center text-emerald-400 animate-pulse mt-2 font-sans font-bold text-[11px]">
+                  <div className="flex gap-2 items-center text-emerald-450 animate-pulse mt-2 font-sans font-bold text-[11px]">
                     <RefreshCw size={12} className="animate-spin" />
                     <span>Lanzando impulsos lógicos de sobreescritura NIST SP 800-88...</span>
                   </div>
@@ -1329,7 +1159,7 @@ pause >nul
                 </div>
 
                 {/* Main Certified Hardware Specs table */}
-                <div className="p-4 bg-black/40 rounded-2xl border border-white/5 space-y-2 text-[11px] text-gray-300 leading-relaxed font-mono print-black-text">
+                <div className="p-4 bg-black/45 rounded-2xl border border-white/5 space-y-2 text-[11px] text-gray-300 leading-relaxed font-mono print-black-text">
                   <div className="border-b border-white/5 pb-1.5 mb-1.5 flex justify-between items-center">
                     <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider block">MÉTRICAS TÉCNICAS DEL HARDWARE SANADO:</span>
                   </div>
@@ -1539,7 +1369,13 @@ pause >nul
                     : "bg-red-950/30 border-red-500/20 text-red-350"
                 }`}>
                   <div className="flex items-start gap-2">
-                    <span className="text-base leading-none">{auditResult.isValid ? "🛡️" : "⚠️"}</span>
+                    <span className="text-base leading-none">
+                      {auditResult.isValid ? (
+                        <i className="bi bi-shield-fill-check text-emerald-400"></i>
+                      ) : (
+                        <i className="bi bi-exclamation-triangle-fill text-red-500"></i>
+                      )}
+                    </span>
                     <div>
                       <strong className="block uppercase text-[10.5px] tracking-wide font-black">
                         {auditResult.title}
@@ -1621,7 +1457,7 @@ pause >nul
                             {event.badge}
                           </span>
                         </div>
-                        <span className="text-[10px] text-gray-500 font-bold font-mono">{event.date}</span>
+                        <span className="text-[10px] text-gray-505 font-bold font-mono">{event.date}</span>
                       </div>
 
                       <p className="text-xs text-gray-400 leading-relaxed font-semibold">
@@ -1656,7 +1492,7 @@ pause >nul
                 <div className="space-y-1.5">
                   <h4 className="text-sm font-bold text-white uppercase">Consulta del Ledger Activa</h4>
                   <p className="text-xs text-zinc-500 max-w-sm mx-auto leading-relaxed">
-                    Ingresa un número de serie en la consola de la izquierda o haz clic en un serial de prueba para ver su Hoja de Vida, Auditorías de Saneamiento NIST e Integridad Física SMART.
+                    Ingresa un número de serie en la consola de la izquierda o hace clic en un serial de prueba para ver su Hoja de Vida, Auditorías de Saneamiento NIST e Integridad Física SMART.
                   </p>
                 </div>
               </div>

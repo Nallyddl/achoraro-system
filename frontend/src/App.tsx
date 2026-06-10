@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import CartDrawer from "./components/CartDrawer";
 import Footer from "./components/Footer";
@@ -328,7 +328,7 @@ export default function App() {
                 {/* Text section */}
                 <div className="relative z-10 flex-1 space-y-3 text-center md:text-left">
                   <span className="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1 rounded-full font-bold uppercase tracking-wider">
-                    PROMO CTS ACTIVA 🔥
+                    PROMO CTS ACTIVA <i className="bi bi-fire text-amber-500"></i>
                   </span>
                   <h3 className="text-2xl sm:text-3xl font-extrabold uppercase leading-snug tracking-tight text-white">
                     MOMENTO DE APROVECHAR LAS CTS
@@ -356,56 +356,6 @@ export default function App() {
                     <span className="block text-xl sm:text-2xl font-extrabold text-blue-500 leading-none">18</span>
                     <span className="text-[10px] text-gray-500 font-bold mt-1 block">Seg</span>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Prominent Ciberseguridad & NIST 800-88 call-to-action block */}
-            <div className="w-full max-w-7xl mx-auto px-4">
-              <div className="relative rounded-3xl overflow-hidden border border-emerald-500/15 bg-gradient-to-r from-emerald-950/20 via-[#0F0F12] to-black p-6 sm:p-10 flex flex-col lg:flex-row items-center justify-between gap-6 sm:gap-8">
-                <div className="absolute -left-12 -top-12 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
-                <div className="absolute right-0 bottom-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
-
-                <div className="relative z-10 flex-1 text-center lg:text-left space-y-3">
-                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
-                    <span className="text-sm">🛡️</span>
-                    <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black tracking-widest px-3 py-1 rounded-full uppercase font-mono">
-                      Ciberseguridad & Economía Circular
-                    </span>
-                    <span className="text-[10px] bg-blue-500/15 border border-blue-500/20 text-blue-400 font-extrabold tracking-wide px-2.5 py-1 rounded-full uppercase font-mono">
-                      Cumple Ley N° 29733 (Perú)
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-none leading-snug">
-                    Audita la Salud de tu Almacenamiento & Borra tus Datos con Grado Militar
-                  </h3>
-                  <p className="text-zinc-400 text-xs sm:text-sm font-medium max-w-2xl leading-relaxed">
-                    ¿Vas a vender o repotenciar tu PC? Ejecuta nuestro <strong className="text-white">Agente SMART</strong> para diagnosticar la vida útil de tu disco y genera tu certificado oficial <strong className="text-emerald-400">NIST SP 800-88 Rev 1</strong> de borrado seguro con tasa de recuperación del 0.00%.
-                  </p>
-                </div>
-
-                <div className="relative z-10 flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0">
-                  <button
-                    onClick={() => {
-                      setSelectedTab("security");
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className="h-11 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs px-6 rounded-xl transition-all uppercase tracking-wider shadow-lg shadow-blue-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Activity size={14} />
-                    Probar Agente SMART
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedTab("security");
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className="h-11 bg-[#0F0F12] hover:bg-black border border-white/10 hover:border-emerald-500/30 text-gray-200 hover:text-white font-bold text-xs px-6 rounded-xl transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <ShieldCheck size={14} className="text-emerald-400" />
-                    Saneamiento NIST 800-88
-                  </button>
                 </div>
               </div>
             </div>
@@ -446,7 +396,7 @@ export default function App() {
             <div className="w-full max-w-7xl mx-auto px-4 space-y-6">
               <div className="flex justify-between items-baseline">
                 <h3 className="text-lg font-bold uppercase border-l-4 border-blue-500 pl-3 text-white tracking-tight">
-                  Super Descuentos x 24H 🔥
+                  Super Descuentos x 24H <i className="bi bi-fire text-amber-500"></i>
                 </h3>
                 <button
                   onClick={() => setSelectedTab("products")}

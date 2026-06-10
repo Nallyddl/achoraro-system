@@ -663,7 +663,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
         );
       }
       return (
-        <p key={blockIdx} className="text-xs text-gray-300 leading-relaxed my-1.5 break-words">
+        <p key={blockIdx} className="text-xs text-gray-300 leading-relaxed my-1.5 break">
           {parseBoldText(cleanLine)}
         </p>
       );
@@ -865,7 +865,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                     </div>
 
                     <div className="p-2.5 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-2">
-                      <span className="text-xs mt-0.5">💡</span>
+                      <span className="text-xs mt-0.5 text-blue-400"><i className="bi bi-lightbulb-fill"></i></span>
                       <p className="text-[10.5px] text-blue-300 font-semibold leading-relaxed">
                         <strong className="text-white">Tip Achorao:</strong> para ofimática y navegación pesada, prioriza pasar de 8 a 16 GB RAM y un SSD NVMe PCIe fast.
                       </p>
@@ -875,7 +875,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   {/* GPU Upgrade Guide Table */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 border-b border-white/5 pb-2">
-                      <span className="text-sm">🎮</span>
+                      <span className="text-sm text-emerald-450"><i className="bi bi-controller"></i></span>
                       <h4 className="font-black text-gray-100 uppercase tracking-wider text-xs">¿Debo mejorar mi tarjeta gráfica?</h4>
                     </div>
 
@@ -938,7 +938,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                     </div>
 
                     <div className="p-2.5 bg-[#10B981]/5 border border-[#10B981]/15 rounded-xl flex items-start gap-2">
-                      <span className="text-xs mt-0.5">💡</span>
+                      <span className="text-xs mt-0.5 text-emerald-400"><i className="bi bi-lightbulb-fill"></i></span>
                       <p className="text-[10.5px] text-emerald-400 font-semibold leading-relaxed">
                         <strong className="text-white">Tip Achorao:</strong> para 1080p competitivo, prioriza &ge; 120 FPS; para RT/creación, busca 12-16 GB VRAM.
                       </p>

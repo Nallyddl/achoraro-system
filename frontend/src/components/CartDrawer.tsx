@@ -379,7 +379,7 @@ export default function CartDrawer({
                 <div className="text-xs space-y-0.5">
                   <span className="font-bold text-gray-150 block">¿Pagar con piezas viejas / Trade-in?</span>
                   <span className="text-emerald-400 text-[10px] font-bold block uppercase tracking-wide">
-                    ¡Véndenos tus partes viejas como descuento! 🔥
+                    ¡Véndenos tus partes viejas como descuento! <i className="bi bi-fire text-amber-500"></i>
                   </span>
                 </div>
               </label>
@@ -392,12 +392,12 @@ export default function CartDrawer({
 
                   <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
                     {[
-                      { key: "cpu", label: "Procesador (CPU)", icon: "💻" },
-                      { key: "gpu", label: "Tarjeta Gráfica (GPU)", icon: "🎮" },
-                      { key: "placa", label: "Placa Madre", icon: "🔌" },
-                      { key: "ram", label: "Memoria RAM", icon: "⚡" },
-                      { key: "storage", label: "Almacenamiento / Disco", icon: "💾" },
-                    ].map(({ key, label, icon }) => {
+                      { key: "cpu", label: "Procesador (CPU)", iconClass: "bi bi-cpu text-blue-400" },
+                      { key: "gpu", label: "Tarjeta Gráfica (GPU)", iconClass: "bi bi-controller text-emerald-400" },
+                      { key: "placa", label: "Placa Madre", iconClass: "bi bi-diagram-3-fill text-purple-400" },
+                      { key: "ram", label: "Memoria RAM", iconClass: "bi bi-lightning-charge-fill text-amber-400" },
+                      { key: "storage", label: "Almacenamiento / Disco", iconClass: "bi bi-hdd-fill text-pink-400" },
+                    ].map(({ key, label, iconClass }) => {
                       const value = (currentSpecs as any)[key];
                       const isEnabled = (enabledParts as any)[key];
                       const price = (tradeInPrices as any)[key] || 0;
@@ -415,7 +415,7 @@ export default function CartDrawer({
                                 className="accent-emerald-500 rounded w-3.5 h-3.5 cursor-pointer disabled:opacity-30"
                               />
                               <span className="text-[11px] font-bold text-gray-300 flex items-center gap-1.5">
-                                <span>{icon}</span> {label}
+                                <i className={`${iconClass} text-xs`}></i> {label}
                               </span>
                             </label>
 
