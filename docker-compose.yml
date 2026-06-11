@@ -1,21 +1,27 @@
 services:
-
-  backend:
-    build: ./backend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: achoraro-system-frontend
     ports:
-      - "3000:3000"
+      - "3000:3000" # frontend/API unificada corriendo en el puerto 3000
+    environment:
+      - NODE_ENV=production
     depends_on:
       - db
 
-  frontend:
-    build: ./frontend
+  backend:
+    build: ./backend
+    container_name: achoraro-system-backend
     ports:
-      - "5173:5173"
+      - "4000:4000" # Lo movemos al 4000 para que libere el puerto 3000
     depends_on:
-      - backend
+      - db
 
   db:
     image: postgres:16
+    container_name: achoraro-system-db
     restart: always
     environment:
       POSTGRES_USER: admin

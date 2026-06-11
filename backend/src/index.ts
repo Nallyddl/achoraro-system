@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import express, { Router } from "express";
+import { Router } from "express";
 
 dotenv.config();
 
@@ -399,13 +399,24 @@ router.get("/smart/latest", (req, res) => {
 });
 
 
-// Optional standalone listener if run directly (useful for local development)
-if (process.argv[1] === new URL(import.meta.url).pathname) {
-  const app = express();
-  app.use(express.json());
-  app.use("/api", router);
+// Validación híbrida para evitar que explote import.meta
+const isMainModule = 
+  typeof require !== 'undefined' 
+    ? require.main === module 
+    : (typeof import.meta !== 'undefined' && import.meta.url && process.argv[1] === new URL(import.meta.url).pathname);
+
+// Listener independiente para desarrollo local
+if (isMainModule) {
+  // Importamos express dinámicamente o usamos la instancia para levantar el puerto 4000 local
+  const express = require("express"); 
+  const localApp = express(); 
+  
+  localApp.use(express.json());
+  localApp.use("/api", router); // 👈 Montamos tu router exportado
+  
   const BACK_PORT = process.env.BACKEND_PORT || 4000;
-  app.listen(Number(BACK_PORT), "0.0.0.0", () => {
+  
+  localApp.listen(Number(BACK_PORT), "0.0.0.0", () => {
     console.log(`Backend server running on port ${BACK_PORT}`);
   });
 }
