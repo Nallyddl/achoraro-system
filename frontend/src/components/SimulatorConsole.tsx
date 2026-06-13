@@ -429,6 +429,8 @@ export default function SimulatorConsole({ onAddToCart }: SimulatorConsoleProps)
   // States
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [smartRecommendations, setSmartRecommendations] = useState<any>(null);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
 
   // Conversational AI Assistant state
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
@@ -474,6 +476,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
 
     setValidationError("");
     setIsSimulating(true);
+    setIsLoadingRecommendations(true);
     setAiError("");
 
     try {
@@ -495,10 +498,25 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
       });
       const calcData = await resCalc.json();
       setSimulation(calcData);
+
+      // Fetch dynamic e-commerce smart-upgrades (Level 3 Engine)
+      const resRec = await fetch("/api/simulator/smart-recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentCpu: activeCpu,
+          currentGpu: activeGpu
+        })
+      });
+      if (resRec.ok) {
+        const smartData = await resRec.json();
+        setSmartRecommendations(smartData);
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setIsSimulating(false);
+      setIsLoadingRecommendations(false);
     }
   };
 
@@ -663,7 +681,7 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
         );
       }
       return (
-        <p key={blockIdx} className="text-xs text-gray-300 leading-relaxed my-1.5 break">
+        <p key={blockIdx} className="text-xs text-gray-300 leading-relaxed my-1.5 break-words">
           {parseBoldText(cleanLine)}
         </p>
       );
@@ -1522,6 +1540,167 @@ He analizado el simulador de hardware. Me encuentro listo para darte las mejores
                   </div>
                 </div>
               </div>
+
+              {/* Nivel 3 Advanced Hardware Upgrade Recommendations Section */}
+              {smartRecommendations && smartRecommendations.upgrades && smartRecommendations.upgrades.length > 0 && (
+                <div className="border-t border-white/10 pt-6 space-y-5 text-left font-sans animate-in fade-in slide-in-from-bottom duration-500">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 text-[9px] font-mono font-black tracking-widest bg-blue-500/15 text-blue-400 border border-blue-500/30 rounded-full">
+                          SISTEMA EXPERTO • NIVEL 3
+                        </span>
+                        <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">• Stock Optimizado</span>
+                      </div>
+                      <h4 className="text-base font-black text-white tracking-tight uppercase mt-0.5">
+                        Upgrades Inteligentes de Hardware en Stock
+                      </h4>
+                      <p className="text-xs text-gray-400">
+                        Cálculos del modelo cruzado. Se descartan opciones con cuello de botella superior al 15-20%.
+                      </p>
+                    </div>
+
+                    {isLoadingRecommendations && (
+                      <span className="text-xs text-blue-400 flex items-center gap-1.5 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                        Recalculando...
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {smartRecommendations.upgrades.map((upgrade: any, idx: number) => {
+                      const hasCpu = !!upgrade.cpuUpgrade;
+                      const hasGpu = !!upgrade.gpuUpgrade;
+                      const bottleColor = upgrade.bottleneckType === "BALANCED" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-amber-400 bg-amber-500/10 border-amber-500/20";
+                      const psuWarnColor = upgrade.requiresPsuUpgrade ? "text-red-400 bg-red-400/5 border-red-400/15" : "text-gray-300 bg-white/5 border-white/5";
+
+                      return (
+                        <div 
+                          key={idx} 
+                          className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#070709] hover:border-blue-500/40 p-5 transition-all flex flex-col justify-between gap-4 group"
+                        >
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/12 transition-all"></div>
+                          
+                          <div className="space-y-3.5 relative z-10">
+                            {/* Option card title mapping */}
+                            <div className="flex items-start justify-between">
+                              <span className="text-[10px] font-mono text-gray-500 tracking-wider">OPCIÓN DE UPGRADE #{idx + 1}</span>
+                              <span className={`text-[9px] font-extrabold tracking-wider px-2 py-0.5 border rounded-full font-mono ${bottleColor}`}>
+                                {upgrade.bottleneckType === "BALANCED" ? "✓ SIMÉTRICO" : `⚠ MERMA ${upgrade.bottleneckPercent}%`}
+                              </span>
+                            </div>
+
+                            {/* Main Upgrade description fields */}
+                            <div className="space-y-1.5">
+                              {hasCpu ? (
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                                  <i className="bi bi-cpu text-blue-400"></i>
+                                  <span>CPU: <strong className="text-blue-200">{upgrade.cpuUpgrade.modelName}</strong></span>
+                                  <span className="text-[10px] text-emerald-400 font-mono font-medium ml-auto">S/ {upgrade.cpuUpgrade.price.toLocaleString()}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                                  <i className="bi bi-cpu"></i>
+                                  <span>CPU actual se conserva <strong className="text-xs text-gray-400">(Ahorras Placa/Procesador)</strong></span>
+                                </div>
+                              )}
+
+                              {hasGpu ? (
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                                  <i className="bi bi-gpu-card text-purple-400"></i>
+                                  <span>GPU: <strong className="text-purple-200">{upgrade.gpuUpgrade.modelName}</strong></span>
+                                  <span className="text-[10px] text-emerald-400 font-mono font-medium ml-auto">S/ {upgrade.gpuUpgrade.price.toLocaleString()}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                                  <i className="bi bi-gpu-card"></i>
+                                  <span>GPU actual se conserva <strong className="text-xs text-gray-400">(Rendimiento suficiente)</strong></span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Performance lift benchmarks charts */}
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5 text-center">
+                                <span className="text-[9px] text-emerald-400/80 font-black tracking-wider uppercase font-mono block">FPS en Gaming</span>
+                                <span className="text-sm font-black text-emerald-300">+{upgrade.gamingLiftPercent}%</span>
+                              </div>
+                              <div className="rounded-xl bg-blue-500/5 border border-blue-500/10 p-2.5 text-center">
+                                <span className="text-[9px] text-blue-400/80 font-black tracking-wider uppercase font-mono block">Productividad</span>
+                                <span className="text-sm font-black text-sky-300">+{upgrade.productivityLiftPercent}%</span>
+                              </div>
+                            </div>
+
+                            {/* Diagnostic bottleneck details and power supply warning */}
+                            <div className="space-y-1.5 text-[10.5px]">
+                              <p className="text-gray-400 leading-snug">
+                                {upgrade.bottleneckExplanation}
+                              </p>
+                              
+                              <div className={`p-2.5 rounded-xl border text-[10px] leading-relaxed flex items-start gap-2 ${psuWarnColor}`}>
+                                <i className="bi bi-lightning-charge-fill text-yellow-400"></i>
+                                <div>
+                                  <strong className="block text-white uppercase font-mono text-[9px] tracking-wide">CONSUMO ELÉCTRICO</strong>
+                                  Suma TDP total: <strong>{upgrade.totalTdpWatts}W</strong> ({upgrade.deltaTdpWatts > 0 ? `+${upgrade.deltaTdpWatts}W` : `${upgrade.deltaTdpWatts}W`}). Requiere una fuente de poder certificada de mínimo <strong>{upgrade.requiredPsuWatts}W</strong>.
+                                </div>
+                              </div>
+
+                              <div className="text-[10px] text-gray-500 flex items-center gap-1">
+                                <i className={`bi ${upgrade.requiresMotherboardSwap ? "bi-exclamation-triangle-fill text-red-400" : "bi-check-circle-fill text-emerald-400"}`}></i>
+                                <span>{upgrade.socketCompatibilityMessage}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              const cpuName = upgrade.cpuUpgrade ? upgrade.cpuUpgrade.modelName : null;
+                              const gpuName = upgrade.gpuUpgrade ? upgrade.gpuUpgrade.modelName : null;
+                              const cpuPrice = upgrade.cpuUpgrade ? upgrade.cpuUpgrade.price : 0;
+                              const gpuPrice = upgrade.gpuUpgrade ? upgrade.gpuUpgrade.price : 0;
+                              
+                              if (cpuName) setTargetCpu(cpuName);
+                              if (gpuName) setTargetGpu(gpuName);
+                              
+                              // Trigger state update
+                              setTimeout(() => {
+                                handleSimulate();
+                              }, 100);
+
+                              // Add to shopping cart custom items
+                              if (cpuName) {
+                                onAddToCart({
+                                  id: `smart-cpu-${cpuName.replace(/\s+/g, "-").toLowerCase()}`,
+                                  title: `Upgrade de CPU: ${cpuName}`,
+                                  vendor: "Procesador",
+                                  price: cpuPrice,
+                                  image: "https://www.achorao.com/cdn/shop/files/asus-tarjeta-madre-motherboard-default-title-motherboard-asus-tuff-gaming-a620m-plus-wifi-am5-ddr5-197105164260-39065243058416.jpg?v=1754485565&width=360",
+                                  available: true,
+                                });
+                              }
+                              if (gpuName) {
+                                onAddToCart({
+                                  id: `smart-gpu-${gpuName.replace(/\s+/g, "-").toLowerCase()}`,
+                                  title: `Upgrade de GPU: ${gpuName}`,
+                                  vendor: "Tarjeta de Video",
+                                  price: gpuPrice,
+                                  image: "https://www.achorao.com/cdn/shop/files/playseat-repuestos-y-accesorios-para-simuladores-default-title-gearshift-holder-pro-soporte-de-caja-8717496871756-39536913416432.jpg?v=1754483006&width=360",
+                                  available: true,
+                                });
+                              }
+                            }}
+                            className="w-full h-9 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+                          >
+                            <i className="bi bi-cart-plus"></i>
+                            Adquirir & Simular Upgrade
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Highly interactive graphical AI Consultation chat messenger board */}
               <div className="border-t border-white/10 pt-6 space-y-4 font-sans text-left">

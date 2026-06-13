@@ -1,0 +1,67 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id               String   @id @default(uuid()) @map("id")
+  title            String   @map("title")
+  vendor           String   @map("vendor")
+  price            Decimal  @map("price") @db.Decimal(10, 2)
+  compareAtPrice   Decimal? @map("compare_at_price") @db.Decimal(10, 2)
+  imageUrl         String   @map("image_url")
+  secondaryImageUrl String?  @map("secondary_image_url")
+  tag              String?  @map("tag")
+  available        Boolean  @default(true) @map("available")
+  inventoryCount   Int      @default(0) @map("inventory_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  cpu              Cpu?
+  gpu              Gpu?
+
+  @@map("products")
+}
+
+model Cpu {
+  id                 String   @id @default(uuid()) @map("id")
+  modelName          String   @unique @map("model_name")
+  singleThreadScore  Int      @map("single_thread_score") 
+  multiThreadScore   Int      @map("multi_thread_score")  
+  tdpWatts           Int      @map("tdp_watts")           
+  socket             String   @map("socket")              
+  cores              Int      @map("cores")
+  threads            Int      @map("threads")
+  
+  productId          String   @unique @map("product_id")
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([singleThreadScore])
+  @@index([multiThreadScore])
+  @@map("cpus")
+}
+
+model Gpu {
+  id                 String   @id @default(uuid()) @map("id")
+  modelName          String   @unique @map("model_name")
+  gpuMarkScore       Int      @map("gpu_mark_score")      
+  vramGb             Int      @map("vram_gb")             
+  tdpWatts           Int      @map("tdp_watts")           
+  architecture       String   @map("architecture")        
+  
+  productId          String   @unique @map("product_id")
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([gpuMarkScore])
+  @@map("gpus")
+}

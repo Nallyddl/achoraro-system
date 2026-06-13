@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import { Router } from "express";
+import express, { Router } from "express";
 
 dotenv.config();
 
@@ -233,6 +233,212 @@ router.post("/simulator/calculate", (req: any, res: any) => {
   });
 });
 
+// 2.5 Nivel 3 Advanced Hardware Recommendation Engine API
+router.post("/simulator/smart-recommendations", (req: any, res: any) => {
+  const { currentCpu, currentGpu } = req.body;
+
+  if (!currentCpu || !currentGpu) {
+    return res.status(400).json({ error: "Faltan componentes en la solicitud para calcular recomendaciones hídridas." });
+  }
+
+  // Fallbacks corresponding to exact single thread benchmarks
+  const cpuSingleThreadMap: { [key: string]: number } = {
+    "AMD Ryzen 5 5600X": 3380,
+    "AMD Ryzen 7 5700X": 3410,
+    "AMD Ryzen 7 7800X3D": 4350,
+    "AMD Ryzen 9 7950X": 4400,
+    "Intel Core i5-12400F": 3510,
+    "Intel Core i7-13700K": 4290,
+    "Intel Core i9-14900K": 4750,
+    "Intel Core i3-12100": 3150,
+    "Ryzen 5 3600": 2580,
+    "Intel Core i7-7700K": 2590,
+  };
+
+  const cpuSocketMap: { [key: string]: string } = {
+    "AMD Ryzen 5 5600X": "AM4",
+    "AMD Ryzen 7 5700X": "AM4",
+    "AMD Ryzen 7 7800X3D": "AM5",
+    "AMD Ryzen 9 7950X": "AM5",
+    "Intel Core i5-12400F": "LGA1700",
+    "Intel Core i7-13700K": "LGA1700",
+    "Intel Core i9-14900K": "LGA1700",
+    "Intel Core i3-12100": "LGA1700",
+    "Ryzen 5 3600": "AM4",
+    "Intel Core i7-7700K": "LGA1151",
+  };
+
+  const extractTdpNum = (tdpStr: string) => parseInt(tdpStr?.replace(/\D/g, "") || "150");
+  const extractVramNum = (vramStr: string) => parseInt(vramStr?.replace(/\D/g, "") || "8");
+
+  // Get current component specs
+  const cCpuMatch = CPU_BENCHMARKS[currentCpu] || { score: 18000, details: "6 Cores, 12 Threads", tdp: "65W" };
+  const cGpuMatch = GPU_BENCHMARKS[currentGpu] || { score: 14000, details: "Graphics Card", tdp: "150W", vram: "8GB" };
+
+  const currentCpuSingle = cpuSingleThreadMap[currentCpu] || 2800;
+  const currentCpuMulti = cCpuMatch.score;
+  const currentCpuTdp = extractTdpNum(cCpuMatch.tdp);
+  const currentCpuSocket = cpuSocketMap[currentCpu] || "LGA1700";
+
+  const currentGpuScore = cGpuMatch.score;
+  const currentGpuTdp = extractTdpNum(cGpuMatch.tdp);
+  const currentGpuVram = extractVramNum(cGpuMatch.vram || "8GB");
+
+  // Scoring function baselines
+  const getGamingScore = (cpuSingle: number, gpuMark: number) => {
+    return Math.round((gpuMark * 0.75) + (cpuSingle * 4.5 * 0.25));
+  };
+
+  const getProductivityScore = (cpuMulti: number, gpuVram: number) => {
+    return Math.round((cpuMulti * 0.70) + (gpuVram * 1100 * 0.30));
+  };
+
+  const currentGaming = getGamingScore(currentCpuSingle, currentGpuScore);
+  const currentProductivity = getProductivityScore(currentCpuMulti, currentGpuVram);
+  const currentTotalTdp = currentCpuTdp + currentGpuTdp;
+
+  const currentSetup = {
+    cpu: {
+      modelName: currentCpu,
+      singleThreadScore: currentCpuSingle,
+      multiThreadScore: currentCpuMulti,
+      tdpWatts: currentCpuTdp,
+      socket: currentCpuSocket
+    },
+    gpu: {
+      modelName: currentGpu,
+      gpuMarkScore: currentGpuScore,
+      vramGb: currentGpuVram,
+      tdpWatts: currentGpuTdp
+    },
+    gamingScore: currentGaming,
+    productivityScore: currentProductivity,
+    tdpTotal: currentTotalTdp
+  };
+
+  const candidates: any[] = [];
+
+  // Evaluate bottlenecks
+  const getBottleneckInfo = (singleThread: number, gpuMark: number, cpuName: string, gpuName: string) => {
+    const cpuGpuRatio = singleThread / (gpuMark / 7.5);
+    if (cpuGpuRatio < 0.85) {
+      const pct = Math.min(100, Math.round((1 - (cpuGpuRatio / 0.85)) * 100));
+      return {
+        percent: pct,
+        type: "CPU_LIMIT",
+        explanation: `Cuello de botella de CPU (+${pct}%). El procesador '${cpuName}' limita el potencial total de tu tarjeta '${gpuName}'.`
+      };
+    }
+    if (cpuGpuRatio > 1.30) {
+      const pct = Math.min(100, Math.round(((cpuGpuRatio / 1.30) - 1) * 100));
+      return {
+        percent: pct,
+        type: "GPU_LIMIT",
+        explanation: `Cuello de botella de Tarjeta Gráfica (+${pct}%). Tu procesador '${cpuName}' rinde con potencia de sobra, pero la GPU '${gpuName}' opera a tope.`
+      };
+    }
+    return {
+      percent: Math.round(Math.abs(1 - cpuGpuRatio) * 15),
+      type: "BALANCED",
+      explanation: `Configuración balanceada. El procesador '${cpuName}' y la tarjeta '${gpuName}' rinden de forma simétrica.`
+    };
+  };
+
+  // Helper arrays for eligible upgrade components (stock simulation values with pricing)
+  const cpuPrices: { [key: string]: number } = {
+    "AMD Ryzen 7 7800X3D": 1649.90,
+    "AMD Ryzen 9 7950X": 2399.90,
+    "Intel Core i9-14900K": 2549.90,
+    "Intel Core i7-13700K": 1849.90,
+  };
+
+  const gpuPrices: { [key: string]: number } = {
+    "NVIDIA GeForce RTX 4070 SUPER": 2899.90,
+    "NVIDIA GeForce RTX 4080 SUPER": 4749.90,
+    "NVIDIA GeForce RTX 4090": 8999.90,
+  };
+
+  // Generate recommendation tuples
+  Object.keys(CPU_BENCHMARKS).forEach((cpuName) => {
+    const cpuItem = CPU_BENCHMARKS[cpuName];
+    const cpuSingle = cpuSingleThreadMap[cpuName] || 3000;
+    const cpuMulti = cpuItem.score;
+    const cpuTdp = extractTdpNum(cpuItem.tdp);
+    const cpuSocket = cpuSocketMap[cpuName] || "LGA1700";
+
+    // ONLY evaluate when CPU performance is superior to current
+    if (cpuSingle < currentCpuSingle && cpuName !== currentCpu) return;
+
+    Object.keys(GPU_BENCHMARKS).forEach((gpuName) => {
+      const gpuItem = GPU_BENCHMARKS[gpuName];
+      const gpuScore = gpuItem.score;
+      const gpuVram = extractVramNum(gpuItem.vram);
+      const gpuTdp = extractTdpNum(gpuItem.tdp);
+
+      // ONLY evaluate when GPU performance is superior to current
+      if (gpuScore < currentGpuScore && gpuName !== currentGpu) return;
+
+      // Skip if both are identical to current (no upgrade)
+      if (cpuName === currentCpu && gpuName === currentGpu) return;
+
+      const newGaming = getGamingScore(cpuSingle, gpuScore);
+      const newProductivity = getProductivityScore(cpuMulti, gpuVram);
+
+      const gamingLift = Math.round(((newGaming - currentGaming) / currentGaming) * 100);
+      const prodLift = Math.round(((newProductivity - currentProductivity) / currentProductivity) * 100);
+
+      if (gamingLift <= 0 && prodLift <= 0) return;
+
+      const bottleneck = getBottleneckInfo(cpuSingle, gpuScore, cpuName, gpuName);
+      if (bottleneck.percent > 20) return; // Strict discard threshold
+
+      const totalTdp = cpuTdp + gpuTdp;
+      const deltaTdp = totalTdp - currentTotalTdp;
+      const requiredPsu = Math.ceil((totalTdp * 1.3 + 120) / 50) * 50;
+      const requiresPsuUpgrade = deltaTdp > 60 || totalTdp > 350;
+
+      const requiresMoboSwap = currentCpuSocket !== cpuSocket;
+
+      candidates.push({
+        cpuUpgrade: cpuName === currentCpu ? null : {
+          modelName: cpuName,
+          price: cpuPrices[cpuName] || 999.90,
+          tdpWatts: cpuTdp,
+          available: true
+        },
+        gpuUpgrade: gpuName === currentGpu ? null : {
+          modelName: gpuName,
+          price: gpuPrices[gpuName] || 1999.90,
+          tdpWatts: gpuTdp,
+          available: true
+        },
+        gamingLiftPercent: gamingLift,
+        productivityLiftPercent: prodLift,
+        bottleneckPercent: bottleneck.percent,
+        bottleneckType: bottleneck.type,
+        bottleneckExplanation: bottleneck.explanation,
+        totalTdpWatts: totalTdp,
+        deltaTdpWatts: deltaTdp,
+        requiredPsuWatts: requiredPsu,
+        requiresPsuUpgrade,
+        requiresMotherboardSwap: requiresMoboSwap,
+        socketCompatibilityMessage: requiresMoboSwap
+          ? `Cambio obligatorio de Placa: '${currentCpuSocket}' a '${cpuSocket}'.`
+          : `¡Totalmente Compatible! Conservas tu placa original (${cpuSocket}).`
+      });
+    });
+  });
+
+  const bestUpgrades = candidates
+    .sort((a, b) => b.gamingLiftPercent - a.gamingLiftPercent)
+    .slice(0, 4);
+
+  return res.json({
+    currentSetup,
+    upgrades: bestUpgrades
+  });
+});
+
 // 3. AI Bottleneck Counselor (Optional Gemini Intelligence support)
 router.post("/simulator/ai-report", async (req: any, res: any) => {
   const { 
@@ -399,24 +605,13 @@ router.get("/smart/latest", (req, res) => {
 });
 
 
-// Validación híbrida para evitar que explote import.meta
-const isMainModule = 
-  typeof require !== 'undefined' 
-    ? require.main === module 
-    : (typeof import.meta !== 'undefined' && import.meta.url && process.argv[1] === new URL(import.meta.url).pathname);
-
-// Listener independiente para desarrollo local
-if (isMainModule) {
-  // Importamos express dinámicamente o usamos la instancia para levantar el puerto 4000 local
-  const express = require("express"); 
-  const localApp = express(); 
-  
-  localApp.use(express.json());
-  localApp.use("/api", router); // 👈 Montamos tu router exportado
-  
+// Optional standalone listener if run directly (useful for local development)
+if (process.argv[1] === new URL(import.meta.url).pathname) {
+  const app = express();
+  app.use(express.json());
+  app.use("/api", router);
   const BACK_PORT = process.env.BACKEND_PORT || 4000;
-  
-  localApp.listen(Number(BACK_PORT), "0.0.0.0", () => {
+  app.listen(Number(BACK_PORT), "0.0.0.0", () => {
     console.log(`Backend server running on port ${BACK_PORT}`);
   });
 }
