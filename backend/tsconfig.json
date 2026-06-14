@@ -26,6 +26,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "backend/src/recommendations"
+    "backend/src/recommendations",
+    "backend/src/security"
   ]
 }

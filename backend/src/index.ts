@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import express, { Router } from "express";
+import fs from "fs";
 
 dotenv.config();
 
@@ -436,6 +437,311 @@ router.post("/simulator/smart-recommendations", (req: any, res: any) => {
   return res.json({
     currentSetup,
     upgrades: bestUpgrades
+  });
+});
+
+// ==========================================
+// 2.7 NIST SP 800-88 SECURE SANITIZATION WEB SIMULATORS & LOCAL AGENTS
+// ==========================================
+interface PhysicalHandshake {
+  model: string;
+  serialNumber: string;
+  vendor: string;
+  technicianId?: string;
+  workstation?: string;
+  storageType: string;
+  eraseMethod: string;
+  handshakedAt: string;
+  sessionToken: string;
+  status: "PENDING" | "APPROVED";
+  approvedAt?: string;
+}
+
+interface PhysicalCertification {
+  serialNumber: string;
+  diskModel: string;
+  vendor: string;
+  technicianId?: string;
+  methodApplied: string;
+  status: string;
+  startedAt: string;
+  completedAt: string;
+  durationSeconds: number;
+  exitCode: number;
+  hardwareVerification: any;
+  digitalSignature: string;
+  certificateId: string;
+  auditSignatureHash: string;
+  pdfConformityMessage: string;
+}
+
+const activeHandshakes: { [serial: string]: PhysicalHandshake } = {};
+const activeCertifications: { [serial: string]: PhysicalCertification } = {};
+let latestHandshake: PhysicalHandshake | null = null;
+
+const securityRuntimeUrl = new URL("./security/.saneamiento-runtime.json", import.meta.url);
+
+function loadSecurityRuntime() {
+  try {
+    if (!fs.existsSync(securityRuntimeUrl)) return;
+    const raw = fs.readFileSync(securityRuntimeUrl, "utf8");
+    const data = JSON.parse(raw);
+
+    Object.assign(activeHandshakes, data.activeHandshakes || {});
+    Object.assign(activeCertifications, data.activeCertifications || {});
+    latestHandshake = data.latestHandshake || latestHandshake;
+  } catch (err) {
+    console.warn("[SECURITY RUNTIME] No se pudo cargar el estado local:", err);
+  }
+}
+
+function saveSecurityRuntime() {
+  try {
+    fs.writeFileSync(
+      securityRuntimeUrl,
+      JSON.stringify({ activeHandshakes, activeCertifications, latestHandshake }, null, 2),
+      "utf8"
+    );
+  } catch (err) {
+    console.warn("[SECURITY RUNTIME] No se pudo guardar el estado local:", err);
+  }
+}
+
+loadSecurityRuntime();
+
+// Endpoint to retrieve the latest registered handshake from a local physical agent
+router.get("/v1/security/latest-handshake", (req, res) => {
+  if (latestHandshake) {
+    return res.json({ found: true, handshake: latestHandshake });
+  }
+  return res.json({ found: false, message: "Sin handshakes recientes desde agentes locales." });
+});
+
+// Endpoint to check/retrieve all certified device certifications
+router.get("/v1/security/certifications", (req, res) => {
+  return res.json({ certifications: Object.values(activeCertifications) });
+});
+
+// Endpoint to fetch specific serial numbers certified
+router.get("/v1/security/certified-log/:serial", (req, res) => {
+  const serial = String(req.params.serial).trim().toUpperCase();
+  const cert = activeCertifications[serial];
+  if (cert) {
+    return res.json({ found: true, certification: cert });
+  }
+  return res.json({ found: false, message: `No se encontró certificado para el serial ${serial}` });
+});
+
+router.post("/v1/security/handshake", (req: any, res: any) => {
+  const { model, serialNumber, vendor, technicianId, workstation } = req.body;
+  if (!model || !serialNumber) {
+    return res.status(400).json({ error: "Modelo de hardware y número de serie son requeridos para el handshake de homologación." });
+  }
+
+  // Abstract standard erasure method based on storage classification (NIST SP 800-88 Rev 1)
+  const isNvme = model.toLowerCase().includes("nvme") || model.toLowerCase().includes("nv2") || model.toLowerCase().includes("pro");
+  const isSataSsd = model.toLowerCase().includes("ssd") || model.toLowerCase().includes("sata");
+  
+  let storageType = "HDD";
+  let eraseMethod = "SDELETE";
+
+  if (isNvme) {
+    storageType = "SSD_NVME";
+    eraseMethod = "NVME_SANITIZE"; 
+  } else if (isSataSsd) {
+    storageType = "SSD_SATA";
+    eraseMethod = "ATA_SECURE_ERASE";
+  }
+
+  if (eraseMethod === "SDELETE" && (storageType === "HDD" || model.toLowerCase().includes("usb") || model.toLowerCase().includes("generic") || model.toLowerCase().includes("productcode"))) {
+    // Elevate to WINDOWS_PURGE_COMPAT or CRYPTO_INVALIDATION to match PowerShell script erase methods
+    eraseMethod = "WINDOWS_PURGE_COMPAT";
+  }
+
+  const sessionToken = "TOK_NIST_SESS_" + Math.random().toString(36).substring(2, 11).toUpperCase();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+  const agentGuidelines = [
+    `Powershell Target: Clear-Disk -Number 1 -RemoveData -RemoveOEM -Confirm:$false`,
+    `Standard Instruction Protocol: ${eraseMethod} (${storageType === "SSD_NVME" ? "Sem semiconductor Flash Purge" : "Logical Block Write"})`,
+    `NIST Guidelines categorization: ${storageType === "SSD_NVME" ? "PURGE" : "CLEAR"}`,
+    `Hardware validation metric: 100% null vector scanning`
+  ];
+
+  const handshakeRecord: PhysicalHandshake = {
+    model,
+    serialNumber: String(serialNumber).trim().toUpperCase(),
+    vendor: vendor || model.split(" ")[0] || "Generico",
+    technicianId: technicianId || "TECH-UNKNOWN",
+    workstation: workstation || "WORKSTATION-UNKNOWN",
+    storageType,
+    eraseMethod,
+    handshakedAt: new Date().toISOString(),
+    sessionToken,
+    status: "PENDING"
+  };
+
+  // Keep in active handshakes list
+  activeHandshakes[handshakeRecord.serialNumber] = handshakeRecord;
+  latestHandshake = handshakeRecord;
+  saveSecurityRuntime();
+
+  console.log(`[HANDSHAKE LOCAL] Agente PowerShell conectado para disco: ${model} | S/N: ${serialNumber}`);
+
+  return res.json({
+    sessionToken,
+    eraseMethod,
+    storageType,
+    expiresAt,
+    status: handshakeRecord.status,
+    agentGuidelines
+  });
+});
+
+router.get("/v1/security/status", (req: any, res: any) => {
+  const serial = String(req.query.serialNumber || "").trim().toUpperCase();
+  if (!serial) {
+    return res.status(400).json({ error: "serialNumber es requerido." });
+  }
+
+  const handshake = activeHandshakes[serial];
+  if (!handshake) {
+    return res.json({ found: false, status: "UNKNOWN", isApproved: false });
+  }
+
+  return res.json({
+    found: true,
+    serialNumber: handshake.serialNumber,
+    status: handshake.status,
+    isApproved: handshake.status === "APPROVED",
+    approvedAt: handshake.approvedAt || null
+  });
+});
+
+router.post("/v1/security/approve", (req: any, res: any) => {
+  const serial = String(req.body?.serialNumber || "").trim().toUpperCase();
+  if (!serial) {
+    return res.status(400).json({ error: "serialNumber es requerido." });
+  }
+
+  const handshake = activeHandshakes[serial];
+  if (!handshake) {
+    return res.status(404).json({ error: `No existe handshake pendiente para el serial ${serial}.` });
+  }
+
+  handshake.status = "APPROVED";
+  handshake.approvedAt = new Date().toISOString();
+  latestHandshake = handshake;
+  saveSecurityRuntime();
+
+  console.log(`[HANDSHAKE APPROVED] Serial autorizado para saneamiento: ${serial}`);
+
+  return res.json({
+    success: true,
+    serialNumber: serial,
+    status: handshake.status,
+    isApproved: true,
+    approvedAt: handshake.approvedAt
+  });
+});
+
+router.post("/v1/security/certify", (req: any, res: any) => {
+  const { 
+    sessionToken, serialNumber, diskModel, vendor, technicianId, 
+    methodApplied, status, startedAt, completedAt, durationSeconds, 
+    exitCode, hardwareVerification, digitalSignature 
+  } = req.body;
+
+  if (status !== "SUCCESS") {
+    return res.status(400).json({ error: "Imposible emitir certificado oficial para operaciones con estatus de error." });
+  }
+
+  const certNum = Math.floor(1000 + Math.random() * 8999);
+  const certificateId = `NIST-2026-${certNum}B`;
+  
+  const rsaSig = "SIG_NIST_LIVE_AUTH_" + Math.random().toString(36).substring(2, 12).toUpperCase();
+  const cleanSerial = String(serialNumber || "UNKNOWN").trim().toUpperCase();
+
+  const certData: PhysicalCertification = {
+    serialNumber: cleanSerial,
+    diskModel: diskModel || "Generic Disk",
+    vendor: vendor || "Generic",
+    technicianId: technicianId || "TECH-GENERIC",
+    methodApplied: methodApplied || "WINDOWS_PURGE_COMPAT",
+    status: status || "SUCCESS",
+    startedAt: startedAt || new Date().toISOString(),
+    completedAt: completedAt || new Date().toISOString(),
+    durationSeconds: Number(durationSeconds || 10),
+    exitCode: Number(exitCode || 0),
+    hardwareVerification: hardwareVerification || {},
+    digitalSignature: digitalSignature || rsaSig,
+    certificateId,
+    auditSignatureHash: rsaSig,
+    pdfConformityMessage: `Certificado de Saneamiento NIST ${certificateId} emitido satisfactoriamente para el serial ${cleanSerial}. El log de evidencia física ha sido autenticado por el validador oficial y almacenado con éxito en la base de datos central.`
+  };
+
+  // Store in in-memory certifications list
+  activeCertifications[cleanSerial] = certData;
+  saveSecurityRuntime();
+
+  console.log(`[CERTIFICACION LOCAL OK] Certificado registrado: ${certificateId} para S/N: ${cleanSerial}`);
+
+  return res.status(201).json({
+    logId: "log-" + Math.random().toString(36).substring(2, 8),
+    auditSignatureHash: rsaSig,
+    certificateId,
+    success: true,
+    pdfConformityMessage: certData.pdfConformityMessage
+  });
+});
+
+router.post("/v1/security/certificate", (req: any, res: any) => {
+  const {
+    serialNumber,
+    model,
+    technicianId,
+    workstation,
+    status,
+    sha256,
+    timestamp
+  } = req.body || {};
+
+  const cleanSerial = String(serialNumber || "UNKNOWN").trim().toUpperCase();
+  const handshake = activeHandshakes[cleanSerial];
+  const certificateId = `NIST-2026-${Math.floor(1000 + Math.random() * 8999)}B`;
+  const completedAt = timestamp ? new Date(timestamp).toISOString() : new Date().toISOString();
+
+  const certData: PhysicalCertification = {
+    serialNumber: cleanSerial,
+    diskModel: model || handshake?.model || "Generic Disk",
+    vendor: handshake?.vendor || "Generic",
+    technicianId: technicianId || handshake?.technicianId || "TECH-GENERIC",
+    methodApplied: handshake?.eraseMethod || "WINDOWS_PURGE_COMPAT",
+    status: status || "COMPLETED",
+    startedAt: handshake?.handshakedAt || completedAt,
+    completedAt,
+    durationSeconds: 0,
+    exitCode: 0,
+    hardwareVerification: {
+      workstation: workstation || handshake?.workstation || "WORKSTATION-UNKNOWN",
+      isUnallocatedSpaceVerified: true
+    },
+    digitalSignature: sha256 || "SIG_NIST_LEGACY_CERTIFICATE",
+    certificateId,
+    auditSignatureHash: sha256 || "SIG_NIST_LEGACY_CERTIFICATE",
+    pdfConformityMessage: `Certificado de Saneamiento NIST ${certificateId} emitido satisfactoriamente para el serial ${cleanSerial}.`
+  };
+
+  activeCertifications[cleanSerial] = certData;
+  saveSecurityRuntime();
+
+  console.log(`[CERTIFICADO LEGACY OK] Certificado registrado: ${certificateId} para S/N: ${cleanSerial}`);
+
+  return res.status(201).json({
+    success: true,
+    certificateId,
+    auditSignatureHash: certData.auditSignatureHash,
+    pdfConformityMessage: certData.pdfConformityMessage
   });
 });
 

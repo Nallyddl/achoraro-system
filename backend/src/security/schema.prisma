@@ -1,0 +1,79 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+# ==============================================================================
+# ENUMS (RESTRICCIONES Y CONSTANTES DE INTEGRIDAD)
+# ==============================================================================
+
+/// Clasificación del medio físico para la asignación de algoritmos lógicos
+enum StorageType {
+  HDD
+  SSD_SATA
+  SSD_NVME
+}
+
+/// Métodos de saneamiento lógico y reconfiguración estructural compatibles con la API de Windows
+enum EraseMethod {
+  LOGICAL_CLEAR              // Sobrescritura completa del volumen mediante Format Full (Apto para HDDs)
+  WINDOWS_PURGE_COMPAT       // Sobrescritura secuencial síncrona mediante Diskpart Clean All (SATA)
+  STRUCTURAL_RESET           // Remoción de tablas lógicas e inicialización estructural del bus (NVMe)
+  CRYPTO_INVALIDATION        // Invalidación rápida de descriptores y firmas lógicas de almacenamiento
+}
+
+/// Estados operacionales del ciclo de vida del saneamiento
+enum SanitizationStatus {
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+# ==============================================================================
+# MODELOS DE PERSISTENCIA (LEDGER DE AUDITORÍA CENTRAL)
+# ==============================================================================
+
+/// Registro regulatorio centralizado para la homologación de hardware admitido
+model ApprovedStorageDevice {
+  id          String      @id @default(uuid()) @map("id")
+  vendor      String      @map("vendor")
+  model       String      @unique @map("model")
+  storageType StorageType @map("storage_type")
+  eraseMethod EraseMethod @map("erase_method")
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@index([model, storageType])
+  @@map("approved_storage_devices")
+}
+
+/// Ledger inalterable de auditoría técnica, trazabilidad y cumplimiento de la Ley N° 29733
+model SanitizationLog {
+  id                   String             @id @default(uuid()) @map("id")
+  sessionToken         String             @unique @map("session_token") // Correlación de la sesión activa del Handshake
+  certificateId        String?            @map("certificate_id")        // Persistencia del ID de certificado emitido por el Backend
+  serialNumber         String             @map("serial_number")
+  diskModel            String             @map("disk_model")
+  storageType          StorageType        @map("storage_type")          // Tipo de medio auditado en la operación
+  methodApplied        EraseMethod        @map("method_applied")        // Directiva de remoción ejecutada por el agente
+  technicianId         String             @map("technician_id")
+  workstation          String             @map("workstation")           // Identificador de la estación de hardware local
+  status               SanitizationStatus @default(SUCCESS) @map("status")
+  startedAt            DateTime           @map("started_at")
+  completedAt          DateTime           @default(now()) @map("completed_at")
+  durationSeconds      Int                @map("duration_seconds")
+  exitCode             Int                @map("exit_code")
+  hardwareVerification Json               @map("hardware_verification") // Almacena métricas SMART y metadatos de abstracción
+  digitalSignature     String             @map("digital_signature")     // Sello criptográfico SHA-256 generado por el Agente
+  createdAt            DateTime           @default(now()) @map("created_at")
+
+  @@index([serialNumber])
+  @@index([status])
+  @@index([sessionToken])
+  @@map("sanitization_logs")
+}
