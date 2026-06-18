@@ -1,0 +1,52 @@
+{
+  "activeHandshakes": {
+    "7293551193310479640": {
+      "model": "VendorCo ProductCode",
+      "serialNumber": "7293551193310479640",
+      "vendor": "VendorCo",
+      "technicianId": "TECH-WAYRA-130",
+      "workstation": "LAPTOP-QS3UFU08",
+      "storageType": "SSD_NVME",
+      "eraseMethod": "NVME_SANITIZE",
+      "handshakedAt": "2026-06-18T04:11:28.624Z",
+      "sessionToken": "TOK_NIST_SESS_Z8NPJV7PG",
+      "status": "APPROVED",
+      "approvedAt": "2026-06-18T04:11:33.797Z"
+    }
+  },
+  "activeCertifications": {
+    "7293551193310479640": {
+      "serialNumber": "7293551193310479640",
+      "diskModel": "VendorCo ProductCode",
+      "vendor": "VendorCo",
+      "technicianId": "TECH-WAYRA-130",
+      "methodApplied": "NVME_SANITIZE",
+      "status": "COMPLETED",
+      "startedAt": "2026-06-18T04:11:28.624Z",
+      "completedAt": "2026-06-18T04:11:38.000Z",
+      "durationSeconds": 0,
+      "exitCode": 0,
+      "hardwareVerification": {
+        "workstation": "LAPTOP-QS3UFU08",
+        "isUnallocatedSpaceVerified": true
+      },
+      "digitalSignature": "24052089ca13cbc6ce4109f424a9dce3beb0efce097a763775b215e8c2d5219d",
+      "certificateId": "NIST-2026-6792B",
+      "auditSignatureHash": "24052089ca13cbc6ce4109f424a9dce3beb0efce097a763775b215e8c2d5219d",
+      "pdfConformityMessage": "Certificado de Saneamiento NIST NIST-2026-6792B emitido satisfactoriamente para el serial 7293551193310479640."
+    }
+  },
+  "latestHandshake": {
+    "model": "VendorCo ProductCode",
+    "serialNumber": "7293551193310479640",
+    "vendor": "VendorCo",
+    "technicianId": "TECH-WAYRA-130",
+    "workstation": "LAPTOP-QS3UFU08",
+    "storageType": "SSD_NVME",
+    "eraseMethod": "NVME_SANITIZE",
+    "handshakedAt": "2026-06-18T04:11:28.624Z",
+    "sessionToken": "TOK_NIST_SESS_Z8NPJV7PG",
+    "status": "APPROVED",
+    "approvedAt": "2026-06-18T04:11:33.797Z"
+  }
+}
