@@ -481,6 +481,24 @@ let latestHandshake: PhysicalHandshake | null = null;
 
 const securityRuntimeUrl = new URL("./security/.saneamiento-runtime.json", import.meta.url);
 
+function isHandshakeExpired(handshake: PhysicalHandshake | null): boolean {
+  if (!handshake) return true;
+  const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+  const handshakeTime = new Date(handshake.handshakedAt).getTime();
+  return handshakeTime < fiveMinAgo;
+}
+
+function cleanExpiredHandshakes() {
+  for (const serial of Object.keys(activeHandshakes)) {
+    if (isHandshakeExpired(activeHandshakes[serial])) {
+      delete activeHandshakes[serial];
+    }
+  }
+  if (latestHandshake && isHandshakeExpired(latestHandshake)) {
+    latestHandshake = null;
+  }
+}
+
 function loadSecurityRuntime() {
   try {
     if (!fs.existsSync(securityRuntimeUrl)) return;
@@ -490,6 +508,7 @@ function loadSecurityRuntime() {
     Object.assign(activeHandshakes, data.activeHandshakes || {});
     Object.assign(activeCertifications, data.activeCertifications || {});
     latestHandshake = data.latestHandshake || latestHandshake;
+    cleanExpiredHandshakes();
   } catch (err) {
     console.warn("[SECURITY RUNTIME] No se pudo cargar el estado local:", err);
   }
@@ -511,6 +530,7 @@ loadSecurityRuntime();
 
 // Endpoint to retrieve the latest registered handshake from a local physical agent
 router.get("/v1/security/latest-handshake", (req, res) => {
+  cleanExpiredHandshakes();
   if (latestHandshake) {
     return res.json({ found: true, handshake: latestHandshake });
   }
@@ -533,6 +553,7 @@ router.get("/v1/security/certified-log/:serial", (req, res) => {
 });
 
 router.post("/v1/security/handshake", (req: any, res: any) => {
+  cleanExpiredHandshakes();
   const { model, serialNumber, vendor, technicianId, workstation } = req.body;
   if (!model || !serialNumber) {
     return res.status(400).json({ error: "Modelo de hardware y número de serie son requeridos para el handshake de homologación." });

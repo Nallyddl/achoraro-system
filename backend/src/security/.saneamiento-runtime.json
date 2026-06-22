@@ -1,52 +1,72 @@
 {
   "activeHandshakes": {
-    "7293551193310479640": {
-      "model": "VendorCo ProductCode",
-      "serialNumber": "7293551193310479640",
-      "vendor": "VendorCo",
-      "technicianId": "TECH-WAYRA-130",
+    "[": {
+      "model": "Generic STORAGE DEVICE",
+      "serialNumber": "[",
+      "vendor": "Generico",
+      "technicianId": "TECH-WAYRA-759",
       "workstation": "LAPTOP-QS3UFU08",
-      "storageType": "SSD_NVME",
-      "eraseMethod": "NVME_SANITIZE",
-      "handshakedAt": "2026-06-18T04:11:28.624Z",
-      "sessionToken": "TOK_NIST_SESS_Z8NPJV7PG",
+      "storageType": "HDD",
+      "eraseMethod": "WINDOWS_PURGE_COMPAT",
+      "handshakedAt": "2026-06-22T16:08:38.668Z",
+      "sessionToken": "TOK_NIST_SESS_XSHZ8N5OR",
       "status": "APPROVED",
-      "approvedAt": "2026-06-18T04:11:33.797Z"
+      "approvedAt": "2026-06-22T16:08:39.729Z"
     }
   },
   "activeCertifications": {
     "7293551193310479640": {
       "serialNumber": "7293551193310479640",
       "diskModel": "VendorCo ProductCode",
-      "vendor": "VendorCo",
-      "technicianId": "TECH-WAYRA-130",
+      "vendor": "Generico",
+      "technicianId": "TECH-WAYRA-780",
       "methodApplied": "NVME_SANITIZE",
       "status": "COMPLETED",
-      "startedAt": "2026-06-18T04:11:28.624Z",
-      "completedAt": "2026-06-18T04:11:38.000Z",
+      "startedAt": "2026-06-22T15:51:38.802Z",
+      "completedAt": "2026-06-22T20:51:54.000Z",
       "durationSeconds": 0,
       "exitCode": 0,
       "hardwareVerification": {
         "workstation": "LAPTOP-QS3UFU08",
         "isUnallocatedSpaceVerified": true
       },
-      "digitalSignature": "24052089ca13cbc6ce4109f424a9dce3beb0efce097a763775b215e8c2d5219d",
-      "certificateId": "NIST-2026-6792B",
-      "auditSignatureHash": "24052089ca13cbc6ce4109f424a9dce3beb0efce097a763775b215e8c2d5219d",
-      "pdfConformityMessage": "Certificado de Saneamiento NIST NIST-2026-6792B emitido satisfactoriamente para el serial 7293551193310479640."
+      "digitalSignature": "d371c5d7922542ef0604b5c3f03cfaf7f511956c715f9f05914d2be4c78c1f51",
+      "certificateId": "NIST-2026-5614B",
+      "auditSignatureHash": "d371c5d7922542ef0604b5c3f03cfaf7f511956c715f9f05914d2be4c78c1f51",
+      "pdfConformityMessage": "Certificado de Saneamiento NIST NIST-2026-5614B emitido satisfactoriamente para el serial 7293551193310479640."
+    },
+    "[": {
+      "serialNumber": "[",
+      "diskModel": "Generic STORAGE DEVICE",
+      "vendor": "Generico",
+      "technicianId": "TECH-WAYRA-759",
+      "methodApplied": "WINDOWS_PURGE_COMPAT",
+      "status": "COMPLETED",
+      "startedAt": "2026-06-22T16:08:38.668Z",
+      "completedAt": "2026-06-22T21:08:58.000Z",
+      "durationSeconds": 0,
+      "exitCode": 0,
+      "hardwareVerification": {
+        "workstation": "LAPTOP-QS3UFU08",
+        "isUnallocatedSpaceVerified": true
+      },
+      "digitalSignature": "62277e2806285802dda0b6b0ba3459caee8f2b82a5be7f356c14f3d4abb9e4fe",
+      "certificateId": "NIST-2026-4149B",
+      "auditSignatureHash": "62277e2806285802dda0b6b0ba3459caee8f2b82a5be7f356c14f3d4abb9e4fe",
+      "pdfConformityMessage": "Certificado de Saneamiento NIST NIST-2026-4149B emitido satisfactoriamente para el serial [."
     }
   },
   "latestHandshake": {
-    "model": "VendorCo ProductCode",
-    "serialNumber": "7293551193310479640",
-    "vendor": "VendorCo",
-    "technicianId": "TECH-WAYRA-130",
+    "model": "Generic STORAGE DEVICE",
+    "serialNumber": "[",
+    "vendor": "Generico",
+    "technicianId": "TECH-WAYRA-759",
     "workstation": "LAPTOP-QS3UFU08",
-    "storageType": "SSD_NVME",
-    "eraseMethod": "NVME_SANITIZE",
-    "handshakedAt": "2026-06-18T04:11:28.624Z",
-    "sessionToken": "TOK_NIST_SESS_Z8NPJV7PG",
+    "storageType": "HDD",
+    "eraseMethod": "WINDOWS_PURGE_COMPAT",
+    "handshakedAt": "2026-06-22T16:08:38.668Z",
+    "sessionToken": "TOK_NIST_SESS_XSHZ8N5OR",
     "status": "APPROVED",
-    "approvedAt": "2026-06-18T04:11:33.797Z"
+    "approvedAt": "2026-06-22T16:08:39.729Z"
   }
 }

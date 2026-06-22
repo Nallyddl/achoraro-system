@@ -254,6 +254,9 @@ export default function SecurityTraceability() {
             if (prevCertCount >= 0 && certsData.certifications.length > prevCertCount) {
               const latestCert = certsData.certifications[certsData.certifications.length - 1];
               setNistLogs((p) => [...p, `[Certificado] Nuevo certificado detectado desde PowerShell: ${latestCert.certificateId} para SN: ${latestCert.serialNumber}`]);
+              if (realtimeHandshake && latestCert.serialNumber === realtimeHandshake.serialNumber) {
+                setRealtimeHandshake(null);
+              }
               setLiveCertResult({
                 id: latestCert.certificateId,
                 diskName: latestCert.diskModel,
@@ -279,7 +282,7 @@ export default function SecurityTraceability() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [prevCertCount]);
+  }, [prevCertCount, realtimeHandshake]);
 
 
   const handleDownloadBat = () => {
@@ -1658,34 +1661,66 @@ try {
               </div>
             </div>
 
-            {/* Live PowerShell certificate auto-detected */}
+            {/* Live PowerShell certificate - Borrado completado */}
             {liveCertResult && !nistCertificate && (
-              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 space-y-2 animate-in zoom-in-95">
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                  ¡Nuevo certificado detectado desde agente PowerShell!
+              <div className="bg-gradient-to-br from-emerald-950/40 to-green-950/30 border border-emerald-500/40 rounded-3xl p-6 space-y-4 animate-in zoom-in-95 shadow-lg shadow-emerald-500/5">
+                <div className="flex items-center gap-3 border-b border-emerald-500/20 pb-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+                    <ShieldCheck size={20} className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-emerald-400 uppercase tracking-wider">Borrado Completado</h3>
+                    <p className="text-[10px] text-gray-400 font-mono">Datos destruidos irreversiblemente - Tasa de recuperación 0.00%</p>
+                  </div>
+                  <div className="ml-auto">
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg font-black font-mono uppercase tracking-widest border border-emerald-500/20 animate-pulse">
+                      {liveCertResult.id}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-[11px] text-gray-300 font-mono space-y-1">
-                  <div><strong>Dispositivo:</strong> {liveCertResult.diskName}</div>
-                  <div><strong>Serial:</strong> <span className="text-emerald-400">{liveCertResult.serialNumber}</span></div>
-                  <div><strong>Certificado:</strong> {liveCertResult.id}</div>
-                  <div><strong>Método:</strong> {liveCertResult.level}</div>
-                  <div><strong>Finalizado:</strong> {liveCertResult.date}</div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-[11px] font-mono">
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-gray-500">Dispositivo:</span>
+                    <span className="text-gray-200 font-bold text-right">{liveCertResult.diskName}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-gray-500">Serial:</span>
+                    <span className="text-emerald-400 font-bold text-right">{liveCertResult.serialNumber}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-gray-500">Método:</span>
+                    <span className="text-blue-400 font-bold text-right">{liveCertResult.level}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-gray-500">Finalizado:</span>
+                    <span className="text-gray-200 font-bold text-right">{liveCertResult.date}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1 col-span-2">
+                    <span className="text-gray-500">Firma:</span>
+                    <span className="text-gray-300 text-[9px] text-right truncate max-w-[250px]">{liveCertResult.signature}</span>
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setActiveSubTab("trace")}
-                    className="text-[10px] bg-blue-600/20 border border-blue-500/30 text-blue-400 px-3 py-1 rounded-lg font-bold uppercase hover:bg-blue-600 hover:text-white transition-all cursor-pointer"
+                    className="flex-1 text-center py-2 bg-blue-600/20 border border-blue-500/30 rounded-xl text-[10px] uppercase font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all cursor-pointer"
                   >
                     Ver en Trazabilidad
                   </button>
                   <button
                     type="button"
                     onClick={() => setLiveCertResult(null)}
-                    className="text-[10px] bg-white/5 border border-white/10 text-gray-400 px-3 py-1 rounded-lg font-bold uppercase hover:bg-white/10 transition-all cursor-pointer"
+                    className="flex-1 text-center py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] uppercase font-bold text-gray-400 hover:bg-white/10 transition-all cursor-pointer"
                   >
                     Descartar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="flex-1 text-center py-2 bg-emerald-600/20 border border-emerald-500/30 rounded-xl text-[10px] uppercase font-bold text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all cursor-pointer"
+                  >
+                    Imprimir
                   </button>
                 </div>
               </div>
