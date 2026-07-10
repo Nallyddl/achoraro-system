@@ -1,0 +1,8 @@
+[build]
+buildCommand = "npm ci && cd backend && npm ci && cd ../frontend && npm ci && cd .. && npm run build"
+
+[deploy]
+startCommand = "cd frontend && node dist/server.cjs"
+
+[variables]
+RAILPACK_NO_SPA = "1"
